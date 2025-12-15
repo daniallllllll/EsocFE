@@ -1,5 +1,13 @@
 import React from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
 interface DashboardHeaderProps {
   totalEvents: number;
@@ -26,9 +34,15 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
       <div className="w-full h-64 bg-white rounded-xl shadow p-4">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+          <BarChart
+            data={data}
+            margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
+          >
             <XAxis dataKey="name" />
-            <YAxis />
+            <YAxis
+              allowDecimals={false}
+              domain={[0, (dataMax: number) => Math.ceil(dataMax)]}
+            />
             <Tooltip />
             <Bar dataKey="count">
               {data.map((entry, index) => (
