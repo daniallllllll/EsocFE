@@ -39,6 +39,7 @@ const Index = () => {
               sampleEvents.filter((e) => e.status === "Open").length
             }
             onCardClick={setFilterType}
+            selectedCard={filterType}
           />
 
           <main className="flex-1 p-4 bg-muted/20">

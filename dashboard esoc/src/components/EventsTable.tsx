@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from "react";
-import { Eye, Trash2, Mail, Edit2, X } from "lucide-react";
+import React, { useMemo, useState, useEffect } from "react";
+import { Eye, Trash2, Mail, Edit2, Check } from "lucide-react";
 
-/* =======================
-   TYPES
-======================= */
+/* =====================================================
+   SAMPLE EVENTS
+   ===================================================== */
 export interface EventItem {
   incidentId: string;
   timestamp: string;
@@ -12,74 +12,104 @@ export interface EventItem {
   status: string;
   incidentName: string;
   description: string;
-  source: string;
+  source: string; // Should contain email
 }
 
-/* =======================
-   SAMPLE EVENTS (HERE ONLY)
-======================= */
 export const sampleEvents: EventItem[] = [
   {
-    incidentId: "WB-21683-001",
+    incidentId: "WB-21683-20250909-00010",
     timestamp: "2025-09-09T03:14:10Z",
     platform: "Trend Micro",
     severity: "Critical",
     status: "Open",
-    incidentName: "Credential Theft Detected",
-    description: "Malicious credential harvesting behaviour detected.",
+    incidentName: "Malicious Activity Detected",
+    description: "Credential theft behavior detected.",
     source: "DESKTOP-001 • johndoe@company.com",
   },
   {
-    incidentId: "QR-866602",
+    incidentId: "866602",
     timestamp: "2025-07-29T11:31:24Z",
     platform: "QRadar",
     severity: "High",
     status: "Open",
     incidentName: "Concurrent Sessions Above Threshold",
-    description: "Possible DoS attack detected.",
-    source: "Fortigate SOC",
+    description: "Possible DoS attempt detected.",
+    source: "Fortigate SOC • alice@company.com",
   },
   {
-    incidentId: "CX-119",
+    incidentId: "119",
     timestamp: "2025-11-30T22:08:53Z",
     platform: "Cortex XDR",
     severity: "Low",
     status: "Resolved",
-    incidentName: "Local Threat Prevented",
-    description: "Malware execution blocked.",
-    source: "XDR Agent",
+    incidentName: "Local Threat Detected",
+    description: "Blocked malware execution.",
+    source: "XDR Agent pkp-prod1 • bob@company.com",
   },
 ];
 
-/* =======================
+/* =====================================================
    PROPS
-======================= */
+   ===================================================== */
 interface EventsTableProps {
-  events: EventItem[];
+  events?: EventItem[];
+  cardFilter?: { key: keyof EventItem; value: string };
 }
 
-/* =======================
+/* =====================================================
    COMPONENT
-======================= */
-export const EventsTable: React.FC<EventsTableProps> = ({ events }) => {
+   ===================================================== */
+export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilter }) => {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<keyof EventItem>("timestamp");
   const [sortAsc, setSortAsc] = useState(true);
 
+  const [viewIncident, setViewIncident] = useState<EventItem | null>(null);
+  const [editIncident, setEditIncident] = useState<EventItem | null>(null);
+  const [editStatus, setEditStatus] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+
+  const [emailIncident, setEmailIncident] = useState<EventItem | null>(null);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+
+  const [deleteIncident, setDeleteIncident] = useState<EventItem | null>(null);
+  const [reminderMessage, setReminderMessage] = useState<string | null>(null);
+
+  // Local copy of events to allow edits and deletes
+  const [localData, setLocalData] = useState<EventItem[]>(events);
+
+  // Sync localData whenever props.events changes
+  useEffect(() => {
+    setLocalData(events);
+  }, [events]);
+
+  /* ===================== Filtering & Sorting ===================== */
   const filtered = useMemo(() => {
-    return events
-      .filter(
-        (e) =>
+    return localData
+      .filter((e) => {
+        // Apply card filter first
+        if (cardFilter) {
+          return e[cardFilter.key] === cardFilter.value;
+        }
+        return true;
+      })
+      .filter((e) => {
+        // Apply search
+        if (!search) return true;
+        return (
           e.incidentName.toLowerCase().includes(search.toLowerCase()) ||
           e.description.toLowerCase().includes(search.toLowerCase()) ||
           e.source.toLowerCase().includes(search.toLowerCase())
-      )
+        );
+      })
       .sort((a, b) => {
         if (a[sortKey] < b[sortKey]) return sortAsc ? -1 : 1;
         if (a[sortKey] > b[sortKey]) return sortAsc ? 1 : -1;
         return 0;
       });
-  }, [events, search, sortKey, sortAsc]);
+  }, [localData, search, sortKey, sortAsc, cardFilter]);
 
   const handleSort = (key: keyof EventItem) => {
     if (sortKey === key) setSortAsc(!sortAsc);
@@ -89,8 +119,80 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events }) => {
     }
   };
 
+  /* ===================== View Details ===================== */
+  const handleViewDetails = (incident: EventItem) => setViewIncident(incident);
+  const handleCloseView = () => setViewIncident(null);
+
+  /* ===================== Edit Details ===================== */
+  const handleEditDetails = (incident: EventItem) => {
+    setEditIncident(incident);
+    setEditStatus(incident.status);
+    setEditDescription(incident.description);
+  };
+  const handleSaveEdit = () => {
+    if (!editIncident) return;
+
+    setLocalData((prev) =>
+      prev.map((item) =>
+        item.incidentId === editIncident.incidentId
+          ? { ...item, status: editStatus, description: editDescription }
+          : item
+      )
+    );
+
+    setReminderMessage(
+      `Changes saved for incident "${editIncident.incidentId}". You can send a reminder now.`
+    );
+
+    setEditIncident(null);
+  };
+  const handleCloseEdit = () => setEditIncident(null);
+
+  /* ===================== Send Reminder Email ===================== */
+  const handleSendReminder = (incident: EventItem) => {
+    setEmailIncident(incident);
+
+    const emailMatch = incident.source.match(
+      /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i
+    );
+    const to = emailMatch ? emailMatch[0] : "";
+    setEmailTo(to);
+    setEmailSubject(`Reminder: ${incident.incidentId} - ${incident.incidentName}`);
+    setEmailBody(
+      `Dear ${to ? to.split("@")[0] : "User"},\n\n` +
+        `This is a reminder regarding the incident:\n\n` +
+        `Incident ID: ${incident.incidentId}\n` +
+        `Incident Name: ${incident.incidentName}\n` +
+        `Status: ${incident.status}\n` +
+        `Description: ${incident.description}\n\n` +
+        `Please take necessary actions.\n\nThank you.`
+    );
+  };
+
+  const handleSendEmail = () => {
+    alert(
+      `Email sent to: ${emailTo}\n\nSubject: ${emailSubject}\n\nBody:\n${emailBody}`
+    );
+    setReminderMessage(`Reminder email successfully sent to ${emailTo}.`);
+    setEmailIncident(null);
+  };
+  const handleCloseEmail = () => setEmailIncident(null);
+
+  /* ===================== Delete Incident ===================== */
+  const handleDelete = (incident: EventItem) => setDeleteIncident(incident);
+  const confirmDelete = () => {
+    if (!deleteIncident) return;
+    setLocalData((prev) =>
+      prev.filter((item) => item.incidentId !== deleteIncident.incidentId)
+    );
+    setReminderMessage(`Incident "${deleteIncident.incidentId}" deleted successfully.`);
+    setDeleteIncident(null);
+  };
+  const cancelDelete = () => setDeleteIncident(null);
+
   return (
     <div className="bg-white rounded-xl shadow p-4 h-full flex flex-col">
+      {/* SEARCH */}
       <input
         className="border px-3 py-2 rounded mb-3"
         placeholder="Search incidents..."
@@ -98,6 +200,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events }) => {
         onChange={(e) => setSearch(e.target.value)}
       />
 
+      {/* TABLE */}
       <div className="overflow-auto flex-1">
         <table className="w-full text-sm">
           <thead className="bg-tmone-blue text-white">
@@ -109,10 +212,12 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events }) => {
                 ["incidentName", "Incident"],
                 ["severity", "Severity"],
                 ["status", "Status"],
+                ["description", "Description"],
+                ["source", "Source"],
               ].map(([key, label]) => (
                 <th
                   key={key}
-                  className="px-4 py-3 cursor-pointer"
+                  className="px-4 py-3 cursor-pointer text-left"
                   onClick={() => handleSort(key as keyof EventItem)}
                 >
                   {label}
@@ -126,18 +231,34 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events }) => {
             {filtered.map((e) => (
               <tr key={e.incidentId} className="border-b hover:bg-blue-50">
                 <td className="px-4 py-2">{e.incidentId}</td>
-                <td className="px-4 py-2">
-                  {new Date(e.timestamp).toLocaleString()}
-                </td>
+                <td className="px-4 py-2">{new Date(e.timestamp).toLocaleString()}</td>
                 <td className="px-4 py-2">{e.platform}</td>
                 <td className="px-4 py-2">{e.incidentName}</td>
                 <td className="px-4 py-2">{e.severity}</td>
                 <td className="px-4 py-2">{e.status}</td>
+                <td className="px-4 py-2 max-w-xs truncate">{e.description}</td>
+                <td className="px-4 py-2 max-w-xs truncate">{e.source}</td>
                 <td className="px-4 py-2 flex gap-2">
-                  <Eye size={16} />
-                  <Edit2 size={16} />
-                  <Mail size={16} />
-                  <Trash2 size={16} className="text-red-600" />
+                  <Eye
+                    size={16}
+                    className="cursor-pointer text-blue-600"
+                    onClick={() => handleViewDetails(e)}
+                  />
+                  <Edit2
+                    size={16}
+                    className="cursor-pointer text-green-600"
+                    onClick={() => handleEditDetails(e)}
+                  />
+                  <Mail
+                    size={16}
+                    className="cursor-pointer text-purple-600"
+                    onClick={() => handleSendReminder(e)}
+                  />
+                  <Trash2
+                    size={16}
+                    className="cursor-pointer text-red-600"
+                    onClick={() => handleDelete(e)}
+                  />
                 </td>
               </tr>
             ))}
@@ -145,11 +266,176 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events }) => {
         </table>
 
         {filtered.length === 0 && (
-          <div className="text-center text-gray-500 py-10">
-            No incidents found
-          </div>
+          <div className="text-center text-gray-500 py-10">No incidents found</div>
         )}
       </div>
+
+      {/* VIEW DETAILS MODAL */}
+      {viewIncident && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
+          onClick={handleCloseView}
+        >
+          <div
+            className="bg-white p-6 rounded-xl w-96 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-bold mb-4">Incident Details</h2>
+            <div className="space-y-2 text-sm">
+              <div><strong>ID:</strong> {viewIncident.incidentId}</div>
+              <div><strong>Time:</strong> {new Date(viewIncident.timestamp).toLocaleString()}</div>
+              <div><strong>Platform:</strong> {viewIncident.platform}</div>
+              <div><strong>Incident:</strong> {viewIncident.incidentName}</div>
+              <div><strong>Severity:</strong> {viewIncident.severity}</div>
+              <div><strong>Status:</strong> {viewIncident.status}</div>
+              <div><strong>Description:</strong> {viewIncident.description}</div>
+              <div><strong>Source:</strong> {viewIncident.source}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT DETAILS MODAL */}
+      {editIncident && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
+          onClick={handleCloseEdit}
+        >
+          <div
+            className="bg-white p-6 rounded-xl w-96 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-bold mb-4">Edit Incident</h2>
+            <div className="space-y-3 text-sm">
+              <div>
+                <label className="block font-semibold">Status</label>
+                <input
+                  type="text"
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="border px-2 py-1 rounded w-full"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold">Description</label>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="border px-2 py-1 rounded w-full"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                className="px-3 py-1 bg-green-600 text-white rounded flex items-center gap-1"
+                onClick={handleSaveEdit}
+              >
+                <Check size={16} /> Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SEND REMINDER EMAIL MODAL */}
+      {emailIncident && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
+          onClick={handleCloseEmail}
+        >
+          <div
+            className="bg-white p-6 rounded-xl w-96 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-bold mb-4">Send Reminder Email</h2>
+            <div className="space-y-3 text-sm">
+              <div>
+                <label className="block font-semibold">To</label>
+                <input
+                  type="email"
+                  value={emailTo}
+                  onChange={(e) => setEmailTo(e.target.value)}
+                  className="border px-2 py-1 rounded w-full"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold">Subject</label>
+                <input
+                  type="text"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  className="border px-2 py-1 rounded w-full"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold">Body</label>
+                <textarea
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  className="border px-2 py-1 rounded w-full"
+                  rows={6}
+                />
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                className="px-3 py-1 bg-purple-600 text-white rounded"
+                onClick={handleSendEmail}
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deleteIncident && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
+          onClick={cancelDelete}
+        >
+          <div
+            className="bg-white p-6 rounded-xl w-96 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-bold mb-4 text-red-600">Confirm Delete</h2>
+            <p className="text-sm mb-4">
+              Are you sure you want to delete incident "{deleteIncident.incidentId}"?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-3 py-1 bg-gray-300 rounded"
+                onClick={cancelDelete}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-3 py-1 bg-red-600 text-white rounded"
+                onClick={confirmDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REMINDER MESSAGE MODAL */}
+      {reminderMessage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50"
+          onClick={() => setReminderMessage(null)}
+        >
+          <div
+            className="bg-white p-4 rounded-xl w-80 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm">{reminderMessage}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
