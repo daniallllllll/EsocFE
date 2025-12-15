@@ -5,7 +5,7 @@ import { ToolStatusCard } from "@/components/ToolStatusCard";
 import { EventsTable } from "@/components/EventsTable";
 import { useSecurityEvents, useEventStats } from "@/hooks/useSecurityEvents";
 import { useEffect } from "react";
-
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, Shield, Activity, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
