@@ -1,27 +1,22 @@
 import React from "react";
-import { ShieldCheck, AlertTriangle, Activity } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 interface DashboardHeaderProps {
   totalEvents: number;
   criticalEvents: number;
   openIncidents: number;
-  selectedCard?: "all" | "critical" | "open"; // new optional prop
-  onCardClick: (type: "all" | "critical" | "open") => void;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   totalEvents,
   criticalEvents,
   openIncidents,
-  selectedCard,
-  onCardClick,
 }) => {
-  const getCardClasses = (type: "all" | "critical" | "open", baseColor: string) => {
-    const isSelected = selectedCard === type;
-    return `cursor-pointer flex items-center gap-4 p-5 rounded-xl bg-white shadow border-l-4 border-${baseColor} ${
-      isSelected ? "ring-2 ring-offset-2 ring-" + baseColor : "hover:shadow-lg"
-    }`;
-  };
+  const data = [
+    { name: "Total", count: totalEvents, color: "#2563EB" }, // blue
+    { name: "Critical", count: criticalEvents, color: "#F97316" }, // orange
+    { name: "Open", count: openIncidents, color: "#22C55E" }, // green
+  ];
 
   return (
     <header className="px-8 pt-8 pb-4">
@@ -29,42 +24,19 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         Security Incidents
       </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {/* TOTAL */}
-        <div
-          className={getCardClasses("all", "tmone-blue")}
-          onClick={() => onCardClick("all")}
-        >
-          <Activity size={28} className="text-tmone-blue" />
-          <div>
-            <div className="text-3xl font-bold">{totalEvents}</div>
-            <div className="text-sm text-gray-600">Total Incidents</div>
-          </div>
-        </div>
-
-        {/* CRITICAL */}
-        <div
-          className={getCardClasses("critical", "tmone-orange")}
-          onClick={() => onCardClick("critical")}
-        >
-          <AlertTriangle size={28} className="text-tmone-orange animate-pulse" />
-          <div>
-            <div className="text-3xl font-bold">{criticalEvents}</div>
-            <div className="text-sm text-gray-600">Critical Incidents</div>
-          </div>
-        </div>
-
-        {/* OPEN */}
-        <div
-          className={getCardClasses("open", "tmone-accent")}
-          onClick={() => onCardClick("open")}
-        >
-          <ShieldCheck size={28} className="text-tmone-accent" />
-          <div>
-            <div className="text-3xl font-bold">{openIncidents}</div>
-            <div className="text-sm text-gray-600">Open Incidents</div>
-          </div>
-        </div>
+      <div className="w-full h-64 bg-white rounded-xl shadow p-4">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="count">
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </header>
   );
