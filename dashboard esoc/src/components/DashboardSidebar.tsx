@@ -30,7 +30,7 @@ export const DashboardSidebar: React.FC = () => {
       <div className="flex items-center justify-between p-4">
         {!collapsed && (
           <h2 className="text-lg font-bold text-tmone-orange tracking-wide">
-            ESOC Unifi
+            ESOC Unified
           </h2>
         )}
 
@@ -74,7 +74,7 @@ export const DashboardSidebar: React.FC = () => {
 
       {/* Footer */}
       <div className="p-4 text-xs text-white/60">
-        {!collapsed && "© 2025 TM One ESOC Unifi"}
+        {!collapsed && "© 2025 TM One ESOC Unified"}
       </div>
     </aside>
   );
