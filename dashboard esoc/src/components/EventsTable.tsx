@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from "react";
+import { Eye, Trash2, Mail, Edit2, X } from "lucide-react";
 
-/* ---------- TYPES ---------- */
+/* =======================
+   TYPES
+======================= */
 export interface EventItem {
   incidentId: string;
   timestamp: string;
@@ -12,46 +15,52 @@ export interface EventItem {
   source: string;
 }
 
-/* ---------- SAMPLE EVENTS (EXPORTED) ---------- */
+/* =======================
+   SAMPLE EVENTS (HERE ONLY)
+======================= */
 export const sampleEvents: EventItem[] = [
   {
-    incidentId: "WB-21683-20250909-00010",
+    incidentId: "WB-21683-001",
     timestamp: "2025-09-09T03:14:10Z",
     platform: "Trend Micro",
-    severity: "High",
+    severity: "Critical",
     status: "Open",
-    incidentName: "Malicious Activity Detected",
-    description: "Credential theft behaviour detected.",
-    source: "DESKTOP-001",
+    incidentName: "Credential Theft Detected",
+    description: "Malicious credential harvesting behaviour detected.",
+    source: "DESKTOP-001 • johndoe@company.com",
   },
   {
-    incidentId: "866602",
+    incidentId: "QR-866602",
     timestamp: "2025-07-29T11:31:24Z",
     platform: "QRadar",
-    severity: "Critical",
+    severity: "High",
     status: "Open",
     incidentName: "Concurrent Sessions Above Threshold",
     description: "Possible DoS attack detected.",
     source: "Fortigate SOC",
   },
   {
-    incidentId: "117",
-    timestamp: "2025-11-29T09:09:48Z",
+    incidentId: "CX-119",
+    timestamp: "2025-11-30T22:08:53Z",
     platform: "Cortex XDR",
     severity: "Low",
     status: "Resolved",
-    incidentName: "Local Threat Detected",
+    incidentName: "Local Threat Prevented",
     description: "Malware execution blocked.",
     source: "XDR Agent",
   },
 ];
 
-/* ---------- PROPS ---------- */
+/* =======================
+   PROPS
+======================= */
 interface EventsTableProps {
   events: EventItem[];
 }
 
-/* ---------- COMPONENT ---------- */
+/* =======================
+   COMPONENT
+======================= */
 export const EventsTable: React.FC<EventsTableProps> = ({ events }) => {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<keyof EventItem>("timestamp");
@@ -72,6 +81,14 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events }) => {
       });
   }, [events, search, sortKey, sortAsc]);
 
+  const handleSort = (key: keyof EventItem) => {
+    if (sortKey === key) setSortAsc(!sortAsc);
+    else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow p-4 h-full flex flex-col">
       <input
@@ -87,20 +104,21 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events }) => {
             <tr>
               {[
                 ["incidentId", "Incident ID"],
-                ["timestamp", "Timestamp"],
+                ["timestamp", "Time"],
                 ["platform", "Platform"],
-                ["incidentName", "Incident Name"],
+                ["incidentName", "Incident"],
                 ["severity", "Severity"],
                 ["status", "Status"],
               ].map(([key, label]) => (
                 <th
                   key={key}
                   className="px-4 py-3 cursor-pointer"
-                  onClick={() => setSortKey(key as keyof EventItem)}
+                  onClick={() => handleSort(key as keyof EventItem)}
                 >
                   {label}
                 </th>
               ))}
+              <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
 
@@ -115,6 +133,12 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events }) => {
                 <td className="px-4 py-2">{e.incidentName}</td>
                 <td className="px-4 py-2">{e.severity}</td>
                 <td className="px-4 py-2">{e.status}</td>
+                <td className="px-4 py-2 flex gap-2">
+                  <Eye size={16} />
+                  <Edit2 size={16} />
+                  <Mail size={16} />
+                  <Trash2 size={16} className="text-red-600" />
+                </td>
               </tr>
             ))}
           </tbody>

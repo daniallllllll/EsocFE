@@ -1,13 +1,11 @@
 import React from "react";
 import { ShieldCheck, AlertTriangle, Activity } from "lucide-react";
 
-export type FilterType = "all" | "critical" | "open";
-
 interface DashboardHeaderProps {
   totalEvents: number;
   criticalEvents: number;
   openIncidents: number;
-  onCardClick: (type: FilterType) => void;
+  onCardClick: (type: "all" | "critical" | "open") => void;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -25,12 +23,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {/* TOTAL */}
         <div
-          className="cursor-pointer flex items-center gap-4 p-5 rounded-xl bg-white border-l-4 border-tmone-blue shadow hover:shadow-lg transition"
+          className="cursor-pointer flex items-center gap-4 p-5 rounded-xl bg-white shadow border-l-4 border-tmone-blue hover:shadow-lg"
           onClick={() => onCardClick("all")}
         >
-          <span className="h-12 w-12 flex items-center justify-center rounded-full bg-tmone-blue/10 text-tmone-blue">
-            <Activity size={28} />
-          </span>
+          <Activity size={28} className="text-tmone-blue" />
           <div>
             <div className="text-3xl font-bold">{totalEvents}</div>
             <div className="text-sm text-gray-600">Total Incidents</div>
@@ -39,12 +35,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
         {/* CRITICAL */}
         <div
-          className="cursor-pointer flex items-center gap-4 p-5 rounded-xl bg-white border-l-4 border-tmone-orange shadow hover:shadow-lg transition"
+          className="cursor-pointer flex items-center gap-4 p-5 rounded-xl bg-white shadow border-l-4 border-tmone-orange hover:shadow-lg"
           onClick={() => onCardClick("critical")}
         >
-          <span className="h-12 w-12 flex items-center justify-center rounded-full bg-tmone-orange/10 text-tmone-orange animate-pulse">
-            <AlertTriangle size={28} />
-          </span>
+          <AlertTriangle size={28} className="text-tmone-orange animate-pulse" />
           <div>
             <div className="text-3xl font-bold">{criticalEvents}</div>
             <div className="text-sm text-gray-600">Critical Incidents</div>
@@ -53,12 +47,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
         {/* OPEN */}
         <div
-          className="cursor-pointer flex items-center gap-4 p-5 rounded-xl bg-white border-l-4 border-tmone-accent shadow hover:shadow-lg transition"
+          className="cursor-pointer flex items-center gap-4 p-5 rounded-xl bg-white shadow border-l-4 border-tmone-accent hover:shadow-lg"
           onClick={() => onCardClick("open")}
         >
-          <span className="h-12 w-12 flex items-center justify-center rounded-full bg-tmone-accent/10 text-tmone-accent">
-            <ShieldCheck size={28} />
-          </span>
+          <ShieldCheck size={28} className="text-tmone-accent" />
           <div>
             <div className="text-3xl font-bold">{openIncidents}</div>
             <div className="text-sm text-gray-600">Open Incidents</div>
