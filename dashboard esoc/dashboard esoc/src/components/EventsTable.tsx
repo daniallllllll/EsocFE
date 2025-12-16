@@ -224,7 +224,7 @@ export const EventsTable: React.FC = () => {
   Please take appropriate follow-up actions.
 
   Regards,
-  ESOC Unifi Monitoring Team`;
+  ESOC Unified Monitoring Team`;
 
     setEmailModal({ recipient, subject, body });
   };
