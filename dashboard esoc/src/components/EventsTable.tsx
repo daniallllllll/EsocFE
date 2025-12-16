@@ -201,13 +201,14 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
       />
 
       {/* TABLE */}
-      <div className="overflow-auto flex-1">
+      <div className="flex-1">
         <table className="w-full text-sm">
           <thead className="bg-tmone-blue text-white">
             <tr>
               {[
                 ["incidentId", "Incident ID"],
                 ["timestamp", "Time"],
+                ["customername", "Customer"],
                 ["platform", "Platform"],
                 ["incidentName", "Incident"],
                 ["severity", "Severity"],
@@ -232,6 +233,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
               <tr key={e.incidentId} className="border-b hover:bg-blue-50">
                 <td className="px-4 py-2">{e.incidentId}</td>
                 <td className="px-4 py-2">{new Date(e.timestamp).toLocaleString()}</td>
+                <td className="px-4 py-2">--</td>
                 <td className="px-4 py-2">{e.platform}</td>
                 <td className="px-4 py-2">{e.incidentName}</td>
                 <td className="px-4 py-2">{e.severity}</td>

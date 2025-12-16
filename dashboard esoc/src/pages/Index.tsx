@@ -7,20 +7,18 @@ import { Card, CardContent } from "@/components/ui/card";
 const Index = () => {
   return (
     <SidebarProvider>
-      {/* Lock viewport height & disable page scroll */}
       <div className="flex h-screen overflow-hidden">
         <DashboardSidebar />
 
-        {/* Main content column */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* ✅ Donut-chart Dashboard Header */}
+          {/* Compact charts */}
           <DashboardHeader events={sampleEvents} />
 
-          {/* Main content area */}
-          <main className="flex-1 p-4 bg-muted/20 overflow-hidden">
+          {/* Table takes MOST of screen */}
+          <main className="flex-1 p-1 bg-muted/20">
             <Card className="h-full">
-              <CardContent className="p-3 h-full overflow-hidden">
-                {/* Table takes full height without page scrolling */}
+              <CardContent className="p-2 h-full">
+                {/* Table shows fully without scroll */}
                 <EventsTable events={sampleEvents} />
               </CardContent>
             </Card>

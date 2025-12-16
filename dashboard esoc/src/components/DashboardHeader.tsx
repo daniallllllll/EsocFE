@@ -5,9 +5,12 @@ import {
   Cell,
   Tooltip,
   ResponsiveContainer,
-  Legend,
+  Label,
 } from "recharts";
 
+/* =====================================================
+   PROPS
+===================================================== */
 interface DashboardHeaderProps {
   events: {
     severity: string;
@@ -15,6 +18,9 @@ interface DashboardHeaderProps {
   }[];
 }
 
+/* =====================================================
+   COLORS
+===================================================== */
 const COLORS: Record<string, string> = {
   Critical: "#DC2626",
   High: "#F97316",
@@ -23,8 +29,11 @@ const COLORS: Record<string, string> = {
   Resolved: "#9CA3AF",
 };
 
+/* =====================================================
+   COMPONENT
+===================================================== */
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events }) => {
-  /* ===================== AGGREGATION ===================== */
+  /* ===================== DATA AGGREGATION ===================== */
   const severityData = Object.entries(
     events.reduce<Record<string, number>>((acc, e) => {
       acc[e.severity] = (acc[e.severity] || 0) + 1;
@@ -47,73 +56,108 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events }) => {
     color: COLORS[name],
   }));
 
+  const totalSeverity = severityData.reduce((a, b) => a + b.value, 0);
+  const totalStatus = statusData.reduce((a, b) => a + b.value, 0);
+
   /* ===================== UI ===================== */
   return (
-    <header className="px-4 pt-2 pb-2 bg-muted/10">
-      <h1 className="text-xl font-semibold text-tmone-blue mb-2">
+    <header className="px-4 py-1 bg-background shrink-0">
+      <h1 className="text-lg font-semibold text-tmone-blue mb-2">
         Incident Overview
       </h1>
 
-      {/* ULTRA-COMPACT DONUTS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* Severity */}
-        <div className="bg-white rounded-lg shadow px-2 py-1 h-40">
-          <p className="text-xs font-semibold text-center mb-1">
+      {/* COMPACT DONUT ROW */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+        {/* ================= Severity Distribution ================= */}
+        <div className="flex flex-col items-center">
+          <p className="text-xs font-medium mb-1 text-gray-700">
             Severity Distribution
           </p>
 
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={severityData}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={32}
-                outerRadius={48}
-                paddingAngle={1}
-              >
-                {severityData.map((d, i) => (
-                  <Cell key={i} fill={d.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v: number) => `${v} incidents`} />
-              <Legend
-                verticalAlign="bottom"
-                height={22}
-                wrapperStyle={{ fontSize: "10px" }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="h-[95px] w-full">
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie
+                  data={severityData}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={28}
+                  outerRadius={42}
+                  paddingAngle={2}
+                  stroke="none"
+                >
+                  <Label
+                    value={totalSeverity}
+                    position="center"
+                    className="text-xs font-semibold fill-gray-700"
+                  />
+                  {severityData.map((d, i) => (
+                    <Cell key={i} fill={d.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => `${v} incidents`} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Legend */}
+          <div className="flex gap-3 text-[10px] mt-1">
+            {severityData.map((d) => (
+              <div key={d.name} className="flex items-center gap-1">
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: d.color }}
+                />
+                <span className="text-gray-700">{d.name}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Status */}
-        <div className="bg-white rounded-lg shadow px-2 py-1 h-40">
-          <p className="text-xs font-semibold text-center mb-1">
+        {/* ================= Incident Status ================= */}
+        <div className="flex flex-col items-center">
+          <p className="text-xs font-medium mb-1 text-gray-700">
             Incident Status
           </p>
 
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={statusData}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={32}
-                outerRadius={48}
-                paddingAngle={1}
-              >
-                {statusData.map((d, i) => (
-                  <Cell key={i} fill={d.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v: number) => `${v} incidents`} />
-              <Legend
-                verticalAlign="bottom"
-                height={22}
-                wrapperStyle={{ fontSize: "10px" }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="h-[95px] w-full">
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={28}
+                  outerRadius={42}
+                  paddingAngle={2}
+                  stroke="none"
+                >
+                  <Label
+                    value={totalStatus}
+                    position="center"
+                    className="text-xs font-semibold fill-gray-700"
+                  />
+                  {statusData.map((d, i) => (
+                    <Cell key={i} fill={d.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => `${v} incidents`} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Legend */}
+          <div className="flex gap-3 text-[10px] mt-1">
+            {statusData.map((d) => (
+              <div key={d.name} className="flex items-center gap-1">
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: d.color }}
+                />
+                <span className="text-gray-700">{d.name}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </header>
