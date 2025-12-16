@@ -1,56 +1,120 @@
 import React from "react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
+  PieChart,
+  Pie,
+  Cell,
   Tooltip,
   ResponsiveContainer,
-  Cell,
+  Legend,
 } from "recharts";
 
 interface DashboardHeaderProps {
-  totalEvents: number;
-  criticalEvents: number;
-  openIncidents: number;
+  events: {
+    severity: string;
+    status: string;
+  }[];
 }
 
-export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
-  totalEvents,
-  criticalEvents,
-  openIncidents,
-}) => {
-  const data = [
-    { name: "Total", count: totalEvents, color: "#2563EB" }, // blue
-    { name: "Critical", count: criticalEvents, color: "#F97316" }, // orange
-    { name: "Open", count: openIncidents, color: "#22C55E" }, // green
-  ];
+const COLORS: Record<string, string> = {
+  Critical: "#DC2626",
+  High: "#F97316",
+  Low: "#22C55E",
+  Open: "#2563EB",
+  Resolved: "#9CA3AF",
+};
 
+export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events }) => {
+  /* ===================== AGGREGATION ===================== */
+  const severityData = Object.entries(
+    events.reduce<Record<string, number>>((acc, e) => {
+      acc[e.severity] = (acc[e.severity] || 0) + 1;
+      return acc;
+    }, {})
+  ).map(([name, value]) => ({
+    name,
+    value,
+    color: COLORS[name],
+  }));
+
+  const statusData = Object.entries(
+    events.reduce<Record<string, number>>((acc, e) => {
+      acc[e.status] = (acc[e.status] || 0) + 1;
+      return acc;
+    }, {})
+  ).map(([name, value]) => ({
+    name,
+    value,
+    color: COLORS[name],
+  }));
+
+  /* ===================== UI ===================== */
   return (
-    <header className="px-8 pt-8 pb-4">
-      <h1 className="text-3xl font-bold text-tmone-blue mb-6">
-        Security Incidents
+    <header className="px-4 pt-2 pb-2 bg-muted/10">
+      <h1 className="text-xl font-semibold text-tmone-blue mb-2">
+        Incident Overview
       </h1>
 
-      <div className="w-full h-64 bg-white rounded-xl shadow p-4">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={data}
-            margin={{ top: 20, right: 30, left: 0, bottom: 20 }}
-          >
-            <XAxis dataKey="name" />
-            <YAxis
-              allowDecimals={false}
-              domain={[0, (dataMax: number) => Math.ceil(dataMax)]}
-            />
-            <Tooltip />
-            <Bar dataKey="count">
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      {/* ULTRA-COMPACT DONUTS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Severity */}
+        <div className="bg-white rounded-lg shadow px-2 py-1 h-40">
+          <p className="text-xs font-semibold text-center mb-1">
+            Severity Distribution
+          </p>
+
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={severityData}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={32}
+                outerRadius={48}
+                paddingAngle={1}
+              >
+                {severityData.map((d, i) => (
+                  <Cell key={i} fill={d.color} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(v: number) => `${v} incidents`} />
+              <Legend
+                verticalAlign="bottom"
+                height={22}
+                wrapperStyle={{ fontSize: "10px" }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Status */}
+        <div className="bg-white rounded-lg shadow px-2 py-1 h-40">
+          <p className="text-xs font-semibold text-center mb-1">
+            Incident Status
+          </p>
+
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={statusData}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={32}
+                outerRadius={48}
+                paddingAngle={1}
+              >
+                {statusData.map((d, i) => (
+                  <Cell key={i} fill={d.color} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(v: number) => `${v} incidents`} />
+              <Legend
+                verticalAlign="bottom"
+                height={22}
+                wrapperStyle={{ fontSize: "10px" }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </header>
   );
