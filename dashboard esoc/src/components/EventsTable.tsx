@@ -194,12 +194,59 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
   };
   const handleCloseEmail = () => setEmailIncident(null);
 
+      /* ===================== Download Report ===================== */
+    const handleDownloadReport = () => {
+      if (filtered.length === 0) return;
+
+      const headers = [
+        "Incident ID",
+        "Time",
+        "Customer",
+        "Platform",
+        "Incident",
+        "Severity",
+        "Status",
+        "Description",
+        "Source",
+      ];
+
+      const rows = filtered.map((e) => [
+        e.incidentId,
+        new Date(e.timestamp).toLocaleString(),
+        e.customerName ?? "",
+        e.platform,
+        e.incidentName,
+        e.severity,
+        e.status,
+        e.description,
+        e.source,
+      ]);
+
+      const csv =
+        [headers, ...rows]
+          .map((row) =>
+            row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+          )
+          .join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `incident-report-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+
+      URL.revokeObjectURL(url);
+    };
+
   return (
     <div className="bg-white rounded-xl shadow p-4 h-full flex flex-col">
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center mb-4">
         {/* Search */}
+        <div className="flex items-center gap-2"></div>
         <input
-          className="h-9 w-[260px] border px-3 rounded text-sm"
+          className="h-9 w-[240px] border px-3 rounded text-sm"
           placeholder="Search incident, description, source..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -209,7 +256,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
         <select
           value={severityFilter}
           onChange={(e) => setSeverityFilter(e.target.value)}
-          className="h-9 w-[140px] border rounded px-2 text-sm"
+          className="h-9 w-[130px] border rounded px-2 text-sm"
         >
           <option value="">All Severity</option>
           <option value="Critical">Critical</option>
@@ -222,14 +269,25 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-9 w-[140px] border rounded px-2 text-sm"
+          className="h-9 w-[120px] border rounded px-2 text-sm"
         >
           <option value="">All Status</option>
           <option value="Open">Open</option>
           <option value="Resolved">Resolved</option>
         </select>
+        
+        {/* Download Report Button */}
+        <div className="ml-auto">
+        <button
+          onClick={handleDownloadReport}
+          disabled={filtered.length === 0}
+          className="h-9 px-4 bg-green-600 text-white rounded text-sm font-medium
+               hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Download CSV Report
+        </button>
+        </div>
       </div>
-
 
       {/* TABLE */}
       <div className="flex-1 overflow-x-auto">
@@ -456,5 +514,6 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
     </div>
   );
 };
+
 
 export default EventsTable;
