@@ -81,7 +81,6 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
 
-  const [deleteIncident, setDeleteIncident] = useState<EventItem | null>(null);
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
 
   // Local copy of events to allow edits and deletes
@@ -158,14 +157,14 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
     );
 
     setReminderMessage(
-      `Changes saved for incident "${editIncident.incidentId}". You can send a reminder now.`
+      `Changes saved for incident "${editIncident.incidentId}".`
     );
 
     setEditIncident(null);
   };
   const handleCloseEdit = () => setEditIncident(null);
 
-  /* ===================== Send Reminder Email ===================== */
+  /* ===================== Send Notification Email ===================== */
   const handleSendReminder = (incident: EventItem) => {
     setEmailIncident(incident);
 
@@ -174,10 +173,10 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
     );
     const to = emailMatch ? emailMatch[0] : "";
     setEmailTo(to);
-    setEmailSubject(`Reminder: ${incident.incidentId} - ${incident.incidentName}`);
+    setEmailSubject(`Notification: ${incident.incidentId} - ${incident.incidentName}`);
     setEmailBody(
       `Dear ${to ? to.split("@")[0] : "User"},\n\n` +
-        `This is a reminder regarding the incident:\n\n` +
+        `This is a notification regarding the incident:\n\n` +
         `Incident ID: ${incident.incidentId}\n` +
         `Incident Name: ${incident.incidentName}\n` +
         `Status: ${incident.status}\n` +
@@ -194,18 +193,6 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
     setEmailIncident(null);
   };
   const handleCloseEmail = () => setEmailIncident(null);
-
-  /* ===================== Delete Incident ===================== */
-  const handleDelete = (incident: EventItem) => setDeleteIncident(incident);
-  const confirmDelete = () => {
-    if (!deleteIncident) return;
-    setLocalData((prev) =>
-      prev.filter((item) => item.incidentId !== deleteIncident.incidentId)
-    );
-    setReminderMessage(`Incident "${deleteIncident.incidentId}" deleted successfully.`);
-    setDeleteIncident(null);
-  };
-  const cancelDelete = () => setDeleteIncident(null);
 
   return (
     <div className="bg-white rounded-xl shadow p-4 h-full flex flex-col">
@@ -321,11 +308,6 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
                     className="cursor-pointer text-purple-600"
                     onClick={() => handleSendReminder(e)}
                   />
-                  <Trash2
-                    size={16}
-                    className="cursor-pointer text-red-600"
-                    onClick={() => handleDelete(e)}
-                  />
                 </td>
               </tr>
             ))}
@@ -415,7 +397,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
             className="bg-white p-6 rounded-xl w-96 relative"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-bold mb-4">Send Reminder Email</h2>
+            <h2 className="text-lg font-bold mb-4">Send Notification Email</h2>
             <div className="space-y-3 text-sm">
               <div>
                 <label className="block font-semibold">To</label>
@@ -451,38 +433,6 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
                 onClick={handleSendEmail}
               >
                 Send
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* DELETE CONFIRMATION MODAL */}
-      {deleteIncident && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
-          onClick={cancelDelete}
-        >
-          <div
-            className="bg-white p-6 rounded-xl w-96 relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-bold mb-4 text-red-600">Confirm Delete</h2>
-            <p className="text-sm mb-4">
-              Are you sure you want to delete incident "{deleteIncident.incidentId}"?
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                className="px-3 py-1 bg-gray-300 rounded"
-                onClick={cancelDelete}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-3 py-1 bg-red-600 text-white rounded"
-                onClick={confirmDelete}
-              >
-                Delete
               </button>
             </div>
           </div>
