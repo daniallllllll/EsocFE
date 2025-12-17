@@ -66,7 +66,7 @@ export const sampleEvents: EventItem[] = [
 
   {
     incidentId: "WB-21683-20251112-00007",
-    timestamp: "12/11/2025  12:26:23 PM",
+    timestamp: "12/11/2025 12:26:23 PM",
     platform: "Trend Micro",
     severity: "High",
     status: "Open",
@@ -78,7 +78,7 @@ export const sampleEvents: EventItem[] = [
 
   {
     incidentId: "131",
-    timestamp: "15/06/2025  9:15:45 AM",
+    timestamp: "15/06/2025 9:15:45 AM",
     platform: "Cortex",
     severity: "High",
     status: "New",

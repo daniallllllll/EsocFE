@@ -8,6 +8,17 @@ import {
   Label,
 } from "recharts";
 
+const normalizeSeverity = (s: string) =>
+  s.toLowerCase() === "critical" ? "Critical" :
+  s.toLowerCase() === "high" ? "High" :
+  s.toLowerCase() === "medium" ? "Medium" :
+  "Low";
+
+const normalizeStatus = (s: string) =>
+  s.toLowerCase() === "open" ? "Open" :
+  s.toLowerCase() === "resolved" ? "Resolved" :
+  "New";
+
 /* =====================================================
    PROPS
 ===================================================== */
@@ -24,10 +35,14 @@ interface DashboardHeaderProps {
 const COLORS: Record<string, string> = {
   Critical: "#DC2626",
   High: "#F97316",
+  Medium: "#FACC15",
   Low: "#22C55E",
+
   Open: "#2563EB",
   Resolved: "#9CA3AF",
+  New: "#111827",
 };
+
 
 /* =====================================================
    COMPONENT
@@ -101,7 +116,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events }) => {
           </div>
 
           {/* Legend */}
-          <div className="flex gap-3 text-[10px] mt-1">
+          <div className="flex gap-4 text-xs mt-2">
             {severityData.map((d) => (
               <div key={d.name} className="flex items-center gap-1">
                 <span
