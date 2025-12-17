@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { Eye, Trash2, Mail, Edit2, Check } from "lucide-react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 
 /* =====================================================
    SAMPLE EVENTS
@@ -13,6 +14,7 @@ export interface EventItem {
   incidentName: string;
   description: string;
   source: string; // Should contain email
+  customerName?: string;
 }
 
 export const sampleEvents: EventItem[] = [
@@ -25,6 +27,7 @@ export const sampleEvents: EventItem[] = [
     incidentName: "Malicious Activity Detected",
     description: "Credential theft behavior detected.",
     source: "DESKTOP-001 • johndoe@company.com",
+    customerName: "Acme Corp",
   },
   {
     incidentId: "866602",
@@ -35,6 +38,7 @@ export const sampleEvents: EventItem[] = [
     incidentName: "Concurrent Sessions Above Threshold",
     description: "Possible DoS attempt detected.",
     source: "Fortigate SOC • alice@company.com",
+    customerName: "Beta Inc",
   },
   {
     incidentId: "119",
@@ -45,6 +49,7 @@ export const sampleEvents: EventItem[] = [
     incidentName: "Local Threat Detected",
     description: "Blocked malware execution.",
     source: "XDR Agent pkp-prod1 • bob@company.com",
+    customerName: "Gamma LLC",
   },
 ];
 
@@ -59,8 +64,10 @@ interface EventsTableProps {
 /* =====================================================
    COMPONENT
    ===================================================== */
-export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilter }) => {
+export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents, cardFilter }) => {
   const [search, setSearch] = useState("");
+  const [severityFilter, setSeverityFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [sortKey, setSortKey] = useState<keyof EventItem>("timestamp");
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -98,26 +105,36 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
       .filter((e) => {
         // Apply search
         if (!search) return true;
+        const q = search.toLowerCase();
         return (
-          e.incidentName.toLowerCase().includes(search.toLowerCase()) ||
-          e.description.toLowerCase().includes(search.toLowerCase()) ||
-          e.source.toLowerCase().includes(search.toLowerCase())
+          e.incidentName.toLowerCase().includes(q) ||
+          e.description.toLowerCase().includes(q) ||
+          e.source.toLowerCase().includes(q) ||
+          (e.customerName ?? "").toLowerCase().includes(q)
         );
       })
+      .filter((e) => {
+      if (severityFilter && e.severity !== severityFilter) return false;
+      if (statusFilter && e.status !== statusFilter) return false;
+      return true;
+    })
       .sort((a, b) => {
-        if (a[sortKey] < b[sortKey]) return sortAsc ? -1 : 1;
-        if (a[sortKey] > b[sortKey]) return sortAsc ? 1 : -1;
+        const aVal = a[sortKey];
+        const bVal = b[sortKey];
+
+        if (aVal < bVal) return sortAsc ? -1 : 1;
+        if (aVal > bVal) return sortAsc ? 1 : -1;
         return 0;
       });
-  }, [localData, search, sortKey, sortAsc, cardFilter]);
+      }, [localData, search, sortKey, sortAsc, cardFilter, severityFilter, statusFilter]);
 
-  const handleSort = (key: keyof EventItem) => {
-    if (sortKey === key) setSortAsc(!sortAsc);
-    else {
+      const handleSort = (key: keyof EventItem) => {
+      if (sortKey === key) setSortAsc(!sortAsc);
+      else {
       setSortKey(key);
       setSortAsc(true);
-    }
-  };
+      }
+    };
 
   /* ===================== View Details ===================== */
   const handleViewDetails = (incident: EventItem) => setViewIncident(incident);
@@ -192,39 +209,87 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
 
   return (
     <div className="bg-white rounded-xl shadow p-4 h-full flex flex-col">
-      {/* SEARCH */}
-      <input
-        className="border px-3 py-2 rounded mb-3"
-        placeholder="Search incidents..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <div className="flex items-center gap-3 mb-4">
+        {/* Search */}
+        <input
+          className="h-9 w-[260px] border px-3 rounded text-sm"
+          placeholder="Search incident, description, source..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        {/* Severity Filter */}
+        <select
+          value={severityFilter}
+          onChange={(e) => setSeverityFilter(e.target.value)}
+          className="h-9 w-[140px] border rounded px-2 text-sm"
+        >
+          <option value="">All Severity</option>
+          <option value="Critical">Critical</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
+
+        {/* Status Filter */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="h-9 w-[140px] border rounded px-2 text-sm"
+        >
+          <option value="">All Status</option>
+          <option value="Open">Open</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+      </div>
+
 
       {/* TABLE */}
-      <div className="flex-1">
-        <table className="w-full text-sm">
+      <div className="flex-1 overflow-x-auto">
+        <table className="w-full table-fixed text-sm">
           <thead className="bg-tmone-blue text-white">
             <tr>
-              {[
-                ["incidentId", "Incident ID"],
-                ["timestamp", "Time"],
-                ["customername", "Customer"],
-                ["platform", "Platform"],
-                ["incidentName", "Incident"],
-                ["severity", "Severity"],
-                ["status", "Status"],
-                ["description", "Description"],
-                ["source", "Source"],
-              ].map(([key, label]) => (
+              {([
+                { key: "incidentId", label: "Incident ID", width: "w-[120px]" },
+                { key: "timestamp", label: "Time", width: "w-[180px]" },
+                { key: "customerName", label: "Customer", width: "w-[160px]" },
+                { key: "platform", label: "Platform", width: "w-[140px]" },
+                { key: "incidentName", label: "Incident", width: "w-[220px]" },
+                { key: "severity", label: "Severity", width: "w-[120px]" },
+                { key: "status", label: "Status", width: "w-[120px]" },
+                { key: "description", label: "Description", width: "w-[200px]" },
+                { key: "source", label: "Source", width: "w-[180px]" },
+              ] as {
+                key: keyof EventItem;
+                label: string;
+                width: string;
+              }[]).map((col) => {
+                const isActive = sortKey === col.key;
+                return (
                 <th
-                  key={key}
-                  className="px-4 py-3 cursor-pointer text-left"
-                  onClick={() => handleSort(key as keyof EventItem)}
+                  key={col.key}
+                  className={`px-4 py-3 cursor-pointer text-left cursor-pointer select-none ${col.width}`}
+                  onClick={() => handleSort(col.key)}
                 >
-                  {label}
+                  <div className="flex items-center gap-1">
+                    <span>{col.label}</span>
+                    <div className="flex flex-col leading-none">
+                      <ChevronUp
+                        size={12}
+                        className={
+                          isActive && sortAsc ? "text-white" : "text-white/50"
+                        }
+                      />
+                      <ChevronDown
+                        size={12}
+                        className={ isActive && !sortAsc ? "text-white" : "text-white/50" }
+                      />
+                    </div>
+                  </div>
                 </th>
-              ))}
-              <th className="px-4 py-3">Actions</th>
+                );
+                })}
+              <th className="px-4 py-3 w-[100px]">Actions</th>  
             </tr>
           </thead>
 
@@ -233,7 +298,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
               <tr key={e.incidentId} className="border-b hover:bg-blue-50">
                 <td className="px-4 py-2">{e.incidentId}</td>
                 <td className="px-4 py-2">{new Date(e.timestamp).toLocaleString()}</td>
-                <td className="px-4 py-2">--</td>
+                <td className="px-4 py-2">{e.customerName}</td>
                 <td className="px-4 py-2">{e.platform}</td>
                 <td className="px-4 py-2">{e.incidentName}</td>
                 <td className="px-4 py-2">{e.severity}</td>
