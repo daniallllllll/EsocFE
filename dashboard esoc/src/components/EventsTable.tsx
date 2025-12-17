@@ -416,12 +416,16 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
             <div className="space-y-3 text-sm">
               <div>
                 <label className="block font-semibold">Status</label>
-                <input
-                  type="text"
+                <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value)}
                   className="border px-2 py-1 rounded w-full"
-                />
+                >
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Resolved">Resolved</option>
+                  <option value="Closed">Closed</option>
+                </select>
               </div>
               <div>
                 <label className="block font-semibold">Description</label>
