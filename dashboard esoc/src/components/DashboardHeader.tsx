@@ -62,7 +62,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events }) => {
   /* ===================== UI ===================== */
   return (
     <header className="px-4 py-1 bg-background shrink-0">
-      <h1 className="text-lg font-semibold text-tmone-blue mb-2">
+      <h1 className="text-lg font-semibold text-center mb-3">
         Incident Overview
       </h1>
 
@@ -70,8 +70,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
         {/* ================= Severity Distribution ================= */}
         <div className="flex flex-col items-center">
-          <p className="text-xs font-medium mb-1 text-gray-700">
-            Severity Distribution
+          <p className="text-lg font-semibold text-center mb-3">
+            Incident Severity 
           </p>
 
           <div className="h-[95px] w-full">
@@ -116,7 +116,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events }) => {
 
         {/* ================= Incident Status ================= */}
         <div className="flex flex-col items-center">
-          <p className="text-xs font-medium mb-1 text-gray-700">
+          <p className="text-lg font-semibold text-center mb-3">
             Incident Status
           </p>
 
