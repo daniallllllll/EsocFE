@@ -78,7 +78,7 @@ export const sampleEvents: EventItem[] = [
 
   {
     incidentId: "131",
-    timestamp: "15/06/2025 9:15:45 AM",
+    timestamp: "15/06/2025 08:45:12 AM",
     platform: "Cortex",
     severity: "High",
     status: "New",
