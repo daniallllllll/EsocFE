@@ -54,9 +54,9 @@ export const sampleEvents: EventItem[] = [
 
   {
     incidentId: "WB-21541-20251028-00016",
-    timestamp: "28/10/2025  7:06:24 PM",
+    timestamp: "28/10/2025   7:06:24 PM",
     platform: "Trend Micro",
-    severity: "low",
+    severity: "Low",
     status: "Open",
     incidentName: "Data Destruction via DD Command - Unix",
     description: "Overwrites and deletes a file using DD in Unix.",
@@ -87,20 +87,7 @@ export const sampleEvents: EventItem[] = [
     source: "SERVER-DB01",
     customerName: "--",
   },
-
-  {
-    incidentId: "91",
-    timestamp: "22/08/2025  3:45:12 PM",
-    platform: "Cortex",
-    severity: "Low",
-    status: "Resolved",
-    incidentName: "--",
-    description: "4 'Local Threat Detected' alerts prevented by XDR Agent on host pkp-prod1  involving user root",
-    source: "web-server-01",
-    customerName: "--",
-  }
-
-  
+ 
 ];
 
 /* =====================================================
