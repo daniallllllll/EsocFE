@@ -84,7 +84,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events }) => {
       {/* COMPACT DONUT ROW */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
         {/* ================= Severity Distribution ================= */}
-        <div className="flex flex-col items-center">
+        x flex-col items-center">
           <p className="text-lg font-semibold text-center mb-3">
             Incident Severity 
           </p>

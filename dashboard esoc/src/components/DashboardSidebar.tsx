@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import {
   LayoutDashboard,
-  Shield,
-  FileText,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -13,8 +11,6 @@ export const DashboardSidebar: React.FC = () => {
 
   const menuItems = [
     { name: "Dashboard", icon: <LayoutDashboard size={22} /> },
-    { name: "Incidents", icon: <Shield size={22} /> },
-    { name: "Reports", icon: <FileText size={22} /> },
   ];
 
   return (
