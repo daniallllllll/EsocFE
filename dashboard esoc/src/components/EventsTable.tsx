@@ -226,7 +226,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
     alert(
       `Email sent to: ${emailTo}\n\nSubject: ${emailSubject}\n\nBody:\n${emailBody}`
     );
-    setReminderMessage(`Reminder email successfully sent to ${emailTo}.`);
+    setReminderMessage(`Notification email successfully sent to ${emailTo}.`);
     setEmailIncident(null);
   };
   const handleCloseEmail = () => setEmailIncident(null);
