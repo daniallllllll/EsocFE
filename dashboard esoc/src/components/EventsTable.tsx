@@ -54,7 +54,7 @@ export const sampleEvents: EventItem[] = [
 
   {
     incidentId: "WB-21541-20251028-00016",
-    timestamp: "28/10/2025   7:06:24 PM",
+    timestamp: "2025-10-28T19:06:24Z",
     platform: "Trend Micro",
     severity: "Low",
     status: "Open",
@@ -66,7 +66,7 @@ export const sampleEvents: EventItem[] = [
 
   {
     incidentId: "WB-21683-20251112-00007",
-    timestamp: "12/11/2025 12:26:23 PM",
+    timestamp: "2025-11-12T12:26:23Z",
     platform: "Trend Micro",
     severity: "High",
     status: "Open",
@@ -78,7 +78,7 @@ export const sampleEvents: EventItem[] = [
 
   {
     incidentId: "131",
-    timestamp: "15/06/2025 08:45:12 AM",
+    timestamp: "2025-06-15T08:45:12Z",
     platform: "Cortex",
     severity: "High",
     status: "New",
@@ -278,7 +278,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
     };
 
   return (
-    <div className="bg-white rounded-xl shadow p-4 h-full flex flex-col">
+    <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)]">
       <div className="flex items-center mb-4">
         {/* Search */}
         <div className="flex items-center gap-2"></div>
@@ -329,7 +329,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
       {/* TABLE */}
       <div className="flex-1 overflow-x-auto">
         <table className="w-full table-fixed text-sm">
-          <thead className="bg-tmone-blue text-white">
+          <thead className="bg-tmone-blue text-white sticky top-0 z-20">
             <tr>
               {([
                 { key: "incidentId", label: "Incident ID", width: "w-[120px]" },
