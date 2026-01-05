@@ -1,6 +1,11 @@
-import React from "react";
+import { Navigate } from "react-router-dom";
 
-export const ProtectedRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  // Placeholder: Add your auth logic here
-  return <>{children}</>;
-};
+export function ProtectedRoute({ children }: { children: JSX.Element }) {
+  const isAuth = localStorage.getItem("auth_user");
+
+  if (!isAuth) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return children;
+}
