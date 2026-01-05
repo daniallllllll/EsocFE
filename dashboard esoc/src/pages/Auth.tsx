@@ -14,7 +14,7 @@ export default function AuthPage() {
   useEffect(() => {
     const user = localStorage.getItem("auth_user");
     if (user) {
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
 
@@ -44,35 +44,35 @@ export default function AuthPage() {
       className="
         min-h-screen flex items-center justify-center px-4
         bg-gradient-to-br
-        from-[#0A1A3A] via-[#0F2A5F] to-[#132F7A]
+        from-[#081A3D] via-[#0C2C66] to-[#0E3A8A]
       "
     >
       {/* ===== Login Card ===== */}
       <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
         
-        {/* ===== Top Accent Bar ===== */}
+        {/* ===== Top Accent ===== */}
         <div className="h-2 bg-gradient-to-r from-orange-400 to-orange-600" />
 
         <div className="p-8">
           {/* ===== Header ===== */}
           <div className="mb-8 text-center">
             <div className="flex justify-center mb-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 ring-4 ring-blue-50">
                 <Shield className="h-7 w-7 text-blue-900" />
               </div>
             </div>
 
-            <h1 className="text-2xl font-bold text-blue-900">
+            <h1 className="text-xl font-bold tracking-tight text-blue-900">
               Security Monitoring Dashboard
             </h1>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-gray-500">
               TM One ESOC Unified Platform
             </p>
           </div>
 
           {/* ===== Error ===== */}
           {error && (
-            <div className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 text-center">
+            <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 text-center">
               {error}
             </div>
           )}
@@ -80,7 +80,7 @@ export default function AuthPage() {
           {/* ===== Login Form ===== */}
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">
+              <label className="mb-1 block text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 Email
               </label>
               <input
@@ -88,7 +88,9 @@ export default function AuthPage() {
                 placeholder="admin@test.com"
                 className="
                   h-11 w-full rounded-md border border-gray-300 px-3 text-sm
-                  focus:outline-none focus:ring-2 focus:ring-blue-600
+                  transition
+                  focus:outline-none focus:border-blue-600
+                  focus:ring-2 focus:ring-blue-100
                 "
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -98,7 +100,7 @@ export default function AuthPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">
+              <label className="mb-1 block text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 Password
               </label>
               <input
@@ -106,7 +108,9 @@ export default function AuthPage() {
                 placeholder="••••••••"
                 className="
                   h-11 w-full rounded-md border border-gray-300 px-3 text-sm
-                  focus:outline-none focus:ring-2 focus:ring-blue-600
+                  transition
+                  focus:outline-none focus:border-blue-600
+                  focus:ring-2 focus:ring-blue-100
                 "
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -119,9 +123,12 @@ export default function AuthPage() {
               type="submit"
               disabled={loading}
               className="
-                mt-2 h-11 w-full rounded-md
+                mt-3 h-11 w-full rounded-md
                 bg-orange-500 text-white text-sm font-semibold
-                hover:bg-orange-600 transition
+                shadow-sm
+                hover:bg-orange-600 hover:shadow
+                active:scale-[0.99]
+                transition-all
                 disabled:opacity-60 disabled:cursor-not-allowed
               "
             >
@@ -130,9 +137,9 @@ export default function AuthPage() {
           </form>
 
           {/* ===== Footer Info ===== */}
-          <div className="mt-6 rounded-md bg-gray-50 p-3 text-center text-xs text-gray-600">
-            <p className="font-medium text-gray-700">Demo Access</p>
-            <p>
+          <div className="mt-6 rounded-md border bg-gray-50 p-3 text-center text-xs text-gray-600">
+            <p className="font-semibold text-gray-700">Demo Credentials</p>
+            <p className="mt-1">
               <b>admin@test.com</b> / <b>admin123</b>
             </p>
           </div>
