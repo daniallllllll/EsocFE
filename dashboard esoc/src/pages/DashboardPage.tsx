@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import DashboardHeader from "../components/DashboardHeader";
-import { EventsTable, sampleEvents } from "../components/EventsTable";
 import { useNavigate } from "react-router-dom";
+import EventsTable from "../components/EventsTable";
+import { sampleEvents } from "../data/events.sample";
 
 export default function DashboardPage() {
   const navigate = useNavigate();

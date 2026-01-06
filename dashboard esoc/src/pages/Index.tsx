@@ -1,8 +1,9 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { EventsTable, sampleEvents } from "@/components/EventsTable";
 import { Card, CardContent } from "@/components/ui/card";
+import EventsTable from "@/components/EventsTable";
+import { sampleEvents } from "@/data/events.sample";
 
 const Index = () => {
   return (
