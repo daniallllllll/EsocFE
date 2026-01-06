@@ -3,23 +3,18 @@ import {
   LayoutDashboard,
   ChevronLeft,
   ChevronRight,
-  LogOut,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
 
 export const DashboardSidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [active, setActive] = useState("Dashboard");
-  const navigate = useNavigate();
+  
 
   const menuItems = [
     { name: "Dashboard", icon: <LayoutDashboard size={22} /> },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("auth_user");
-    navigate("/auth", { replace: true });
-  };
 
   return (
     <aside
@@ -70,21 +65,6 @@ export const DashboardSidebar: React.FC = () => {
           );
         })}
       </nav>
-
-      {/* Logout Button */}
-      <div className="px-2 pb-4">
-        <button
-          onClick={handleLogout}
-          className={`
-            flex items-center gap-3 p-3 w-full rounded-lg transition
-            text-white/90 hover:bg-red-600 hover:text-white
-            ${collapsed ? "justify-center" : ""}
-          `}
-        >
-          <LogOut size={20} />
-          {!collapsed && <span className="font-medium">Logout</span>}
-        </button>
-      </div>
 
       {/* Footer */}
       <div className="p-4 text-xs text-white/60 text-center">
