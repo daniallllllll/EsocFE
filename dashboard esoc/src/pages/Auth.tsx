@@ -14,7 +14,7 @@ export default function AuthPage() {
   useEffect(() => {
     const user = localStorage.getItem("auth_user");
     if (user) {
-      navigate("/Index.tsx", { replace: true });
+      navigate("/", { replace: true });
     }
   }, [navigate]);
 
