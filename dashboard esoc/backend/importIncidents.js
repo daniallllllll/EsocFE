@@ -2,7 +2,7 @@ const fs = require("fs");
 const csv = require("csv-parser");
 const db = require("./db");
 
-const filePath = "./incidents.csv";
+const filePath = "./cortex_incident_202512221706.csv";
 
 let count = 0;
 

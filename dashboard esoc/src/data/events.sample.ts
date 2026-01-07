@@ -3,8 +3,8 @@ export interface EventItem {
   timestamp: string;
   platform: string;
   incidentName: string;
-  severity: string;
-  status: string;
+  severity: "Low" | "Medium" | "High" | "Critical";
+  status: "Open" | "In Progress" | "Resolved" | "New";
   description: string;
   source: string;
   customerName: string;
