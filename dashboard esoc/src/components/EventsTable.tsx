@@ -21,7 +21,10 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
   const [statusFilter, setStatusFilter] = useState("");
   const [sortKey, setSortKey] = useState<keyof EventItem>("timestamp");
   const [sortAsc, setSortAsc] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkStatus, setBulkStatus] = useState("");
 
+  const [columnFilters, setColumnFilters] = useState<Partial<Record<keyof EventItem, string>>>({});
   const [viewIncident, setViewIncident] = useState<EventItem | null>(null);
   const [editIncident, setEditIncident] = useState<EventItem | null>(null);
   const [editStatus, setEditStatus] = useState("");
@@ -33,6 +36,8 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
   const [emailBody, setEmailBody] = useState("");
 
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
+
+  
 
   // Local copy of events to allow edits and deletes
   const [localData, setLocalData] = useState<EventItem[]>(events);
@@ -68,10 +73,18 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
       if (statusFilter && e.status !== statusFilter) return false;
       return true;
     })
+      .filter((e) => {
+    return Object.entries(columnFilters).every(([key, value]) => {
+      if (!value) return true;
+      return String(e[key as keyof EventItem])
+        .toLowerCase()
+        .includes(value.toLowerCase());
+        });
+      })
+
       .sort((a, b) => {
         const aVal = a[sortKey];
-        const bVal = b[sortKey];
-
+        const bVal = b[sortKey];  
         if (aVal < bVal) return sortAsc ? -1 : 1;
         if (aVal > bVal) return sortAsc ? 1 : -1;
         return 0;
@@ -83,6 +96,22 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
       else {
       setSortKey(key);
       setSortAsc(true);
+      }
+    };
+    /* ===================== Selection Helpers ===================== */
+    const toggleRow = (id: string) => {
+      setSelectedIds((prev) =>
+        prev.includes(id)
+          ? prev.filter((x) => x !== id)
+          : [...prev, id]
+      );
+    };
+
+    const toggleAll = () => {
+      if (selectedIds.length === filtered.length) {
+        setSelectedIds([]);
+      } else {
+        setSelectedIds(filtered.map((e) => e.incidentId));
       }
     };
 
@@ -191,6 +220,26 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
       URL.revokeObjectURL(url);
     };
 
+    /* ===================== Apply Bulk Status ===================== */
+    const handleApplyBulkStatus = () => {
+      if (!bulkStatus || selectedIds.length === 0) return;
+
+      setLocalData((prev) =>
+        prev.map((item) =>
+          selectedIds.includes(item.incidentId)
+            ? { ...item, status: bulkStatus }
+            : item
+        )
+      );
+
+      setReminderMessage(
+        `Status updated to "${bulkStatus}" for ${selectedIds.length} incident(s).`
+      );
+
+      setBulkStatus("");
+      setSelectedIds([]);
+    };
+
   return (
     <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)]">
       <div className="flex items-center mb-4">
@@ -202,6 +251,35 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        {/* Bulk Action Dropdown */}
+        <select
+          value={bulkStatus}
+          onChange={(e) => setBulkStatus(e.target.value)}
+          disabled={selectedIds.length === 0}
+          className="
+            h-9 w-[180px] ml-2 border rounded px-2 text-sm
+            disabled:opacity-50 disabled:cursor-not-allowed
+          "
+        >
+          <option value="">Bulk Action: Change Status</option>
+          <option value="Open">Open</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Resolved">Resolved</option>
+          <option value="Closed">Closed</option>
+        </select>
+
+        <button
+          onClick={handleApplyBulkStatus}
+          disabled={!bulkStatus || selectedIds.length === 0}
+          className="
+            h-9 px-3 ml-2
+            bg-orange-600 text-white rounded text-sm
+            hover:bg-orange-700
+            disabled:opacity-50 disabled:cursor-not-allowed
+          "
+        >
+          Apply
+        </button>
 
         {/* Severity Filter */}
         <select
@@ -242,10 +320,19 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
 
       {/* TABLE */}
       <div className="flex-1 overflow-x-auto">
-        <table className="w-full table-fixed text-sm">
+        <table className="min-w-[1400px] text-sm border-collapse">
           <thead className="bg-tmone-blue text-white sticky top-0 z-20">
             <tr>
               {([
+                <th className="px-4 py-3 w-[56px] text-center">
+                    <input
+                      type="checkbox"
+                      checked={
+                        filtered.length > 0 && selectedIds.length === filtered.length
+                      }
+                      onChange={toggleAll}
+                    />
+                  </th>,
                 { key: "incidentId", label: "Incident ID", width: "w-[120px]" },
                 { key: "timestamp", label: "Time", width: "w-[180px]" },
                 { key: "customerName", label: "Customer", width: "w-[160px]" },
@@ -292,6 +379,13 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
           <tbody>
             {filtered.map((e) => (
               <tr key={e.incidentId} className="border-b hover:bg-blue-50">
+                <td className="px-4 py-2 w-[56px] text-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(e.incidentId)}
+                    onChange={() => toggleRow(e.incidentId)}
+                  />
+                </td>
                 <td className="px-4 py-2">{e.incidentId}</td>
                 <td className="px-4 py-2">{new Date(e.timestamp).toLocaleString()}</td>
                 <td className="px-4 py-2">{e.customerName}</td>
