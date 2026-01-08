@@ -3,6 +3,9 @@ import { Eye, Trash2, Mail, Edit2, Check } from "lucide-react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { sampleEvents } from "../data/events.sample";
 import { EventItem } from "../types/event";
+import { Search, X } from "lucide-react";
+
+
 
 /* =====================================================
    PROPS
@@ -11,6 +14,21 @@ interface EventsTableProps {
   events?: EventItem[];
   cardFilter?: { key: keyof EventItem; value: string };
 }
+const columns: {
+  key: keyof EventItem;
+  label: string;
+  width: string;
+}[] = [
+  { key: "incidentId", label: "Incident ID", width: "w-[140px]" },
+  { key: "timestamp", label: "Time", width: "w-[180px]" },
+  { key: "customerName", label: "Customer", width: "w-[160px]" },
+  { key: "platform", label: "Platform", width: "w-[140px]" },
+  { key: "incidentName", label: "Incident", width: "w-[220px]" },
+  { key: "severity", label: "Severity", width: "w-[120px]" },
+  { key: "status", label: "Status", width: "w-[120px]" },
+  { key: "description", label: "Description", width: "w-[160px]" },
+  { key: "source", label: "Source", width: "w-[140px]" },
+];
 
 /* =====================================================
    COMPONENT
@@ -48,48 +66,57 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
   }, [events]);
 
   /* ===================== Filtering & Sorting ===================== */
-  const filtered = useMemo(() => {
-    return localData
-      .filter((e) => {
-        // Apply card filter first
-        if (cardFilter) {
+    const filtered = useMemo(() => {
+      return localData
+        /* ===== CARD FILTER ===== */
+        .filter((e) => {
+          if (!cardFilter) return true;
           return e[cardFilter.key] === cardFilter.value;
-        }
-        return true;
-      })
-      .filter((e) => {
-        // Apply search
-        if (!search) return true;
-        const q = search.toLowerCase();
-        return (
-          e.incidentName.toLowerCase().includes(q) ||
-          e.description.toLowerCase().includes(q) ||
-          e.source.toLowerCase().includes(q) ||
-          (e.customerName ?? "").toLowerCase().includes(q)
-        );
-      })
-      .filter((e) => {
-      if (severityFilter && e.severity !== severityFilter) return false;
-      if (statusFilter && e.status !== statusFilter) return false;
-      return true;
-    })
-      .filter((e) => {
-    return Object.entries(columnFilters).every(([key, value]) => {
-      if (!value) return true;
-      return String(e[key as keyof EventItem])
-        .toLowerCase()
-        .includes(value.toLowerCase());
-        });
-      })
+        })
 
-      .sort((a, b) => {
-        const aVal = a[sortKey];
-        const bVal = b[sortKey];  
-        if (aVal < bVal) return sortAsc ? -1 : 1;
-        if (aVal > bVal) return sortAsc ? 1 : -1;
-        return 0;
-      });
-      }, [localData, search, sortKey, sortAsc, cardFilter, severityFilter, statusFilter]);
+        /* ===== GLOBAL SEARCH ===== */
+        .filter((e) => {
+          if (!search) return true;
+          const q = search.toLowerCase();
+          return (
+            e.incidentName.toLowerCase().includes(q) ||
+            e.description.toLowerCase().includes(q) ||
+            e.source.toLowerCase().includes(q) ||
+            (e.customerName ?? "").toLowerCase().includes(q)
+          );
+        })
+
+        /* ===== COLUMN FILTERS (SINGLE SOURCE OF TRUTH) ===== */
+        .filter((e) => {
+          return Object.entries(columnFilters).every(([key, value]) => {
+            if (!value) return true;
+
+            const cell = e[key as keyof EventItem];
+            if (!cell) return false;
+
+            return String(cell)
+              .toLowerCase()
+              .includes(value.toLowerCase());
+          });
+        })
+
+        /* ===== SORTING ===== */
+        .sort((a, b) => {
+          const aVal = a[sortKey];
+          const bVal = b[sortKey];
+
+          if (aVal < bVal) return sortAsc ? -1 : 1;
+          if (aVal > bVal) return sortAsc ? 1 : -1;
+          return 0;
+        });
+    }, [
+      localData,
+      search,
+      sortKey,
+      sortAsc,
+      cardFilter,
+      columnFilters,
+    ]);
 
       const handleSort = (key: keyof EventItem) => {
       if (sortKey === key) setSortAsc(!sortAsc);
@@ -114,6 +141,22 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
         setSelectedIds(filtered.map((e) => e.incidentId));
       }
     };
+
+      const applyBulkStatus = () => {
+    if (!bulkStatus || selectedIds.length === 0) return;
+
+    setLocalData((prev) =>
+      prev.map((row) =>
+        selectedIds.includes(row.incidentId)
+          ? { ...row, status: bulkStatus }
+          : row
+      )
+    );
+
+    setSelectedIds([]);
+    setBulkStatus("");
+  };
+
 
   /* ===================== View Details ===================== */
   const handleViewDetails = (incident: EventItem) => setViewIncident(incident);
@@ -239,6 +282,66 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
       setBulkStatus("");
       setSelectedIds([]);
     };
+    const renderColumnFilter = (key: keyof EventItem) => {
+      // Dropdown filters
+      if (key === "severity") {
+        return (
+          <select
+            className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            value={columnFilters[key] ?? ""}
+            onChange={(e) =>
+              setColumnFilters((prev) => ({
+                ...prev,
+                [key]: e.target.value,
+              }))
+            }
+          >
+            <option value="">All</option>
+            <option value="Critical">Critical</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+        );
+      }
+
+      if (key === "status") {
+        return (
+          <select
+            className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            value={columnFilters[key] ?? ""}
+            onChange={(e) =>
+              setColumnFilters((prev) => ({
+                ...prev,
+                [key]: e.target.value,
+              }))
+            }
+          >
+            <option value="">All</option>
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Closed">Closed</option>
+          </select>
+        );
+      }
+      
+      // Default text filter
+      return (
+        <input
+          type="text"
+          className="w-full border border-gray-300 roundedmpx-2 py-1 text-xs text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500"
+          placeholder="Filter..."
+          value={columnFilters[key] ?? ""}
+          onChange={(e) =>
+            setColumnFilters((prev) => ({
+              ...prev,
+              [key]: e.target.value,
+            }))
+          }
+        />
+      );
+    };
 
   return (
     <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)]">
@@ -251,35 +354,47 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        {/* Bulk Action Dropdown */}
-        <select
-          value={bulkStatus}
-          onChange={(e) => setBulkStatus(e.target.value)}
-          disabled={selectedIds.length === 0}
-          className="
-            h-9 w-[180px] ml-2 border rounded px-2 text-sm
-            disabled:opacity-50 disabled:cursor-not-allowed
-          "
-        >
-          <option value="">Bulk Action: Change Status</option>
-          <option value="Open">Open</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Resolved">Resolved</option>
-          <option value="Closed">Closed</option>
-        </select>
+        {/* ================= BULK ACTION BAR ================= */}
+<div className="flex items-center gap-3 bg-white p-3 rounded-lg shadow-card mb-3">
+  <span className="text-sm font-medium text-gray-700">
+    Bulk Actions
+  </span>
 
-        <button
-          onClick={handleApplyBulkStatus}
-          disabled={!bulkStatus || selectedIds.length === 0}
-          className="
-            h-9 px-3 ml-2
-            bg-orange-600 text-white rounded text-sm
-            hover:bg-orange-700
-            disabled:opacity-50 disabled:cursor-not-allowed
-          "
-        >
-          Apply
-        </button>
+  <select
+    value={bulkStatus}
+    onChange={(e) => setBulkStatus(e.target.value)}
+    className="border rounded px-3 py-1.5 text-sm bg-white"
+  >
+    <option value="">Change Status</option>
+    <option value="Open">Open</option>
+    <option value="In Progress">In Progress</option>
+    <option value="Resolved">Resolved</option>
+    <option value="Closed">Closed</option>
+  </select>
+
+  <button
+    onClick={applyBulkStatus}
+    disabled={!bulkStatus || selectedIds.length === 0}
+    className={`
+      px-4 py-1.5 rounded text-sm font-medium
+      transition
+      ${
+        bulkStatus && selectedIds.length > 0
+          ? "bg-tmone-blue text-white hover:bg-tmone-blue/90"
+          : "bg-gray-200 text-gray-400 cursor-not-allowed"
+      }
+    `}
+  >
+    Apply
+  </button>
+
+  {selectedIds.length > 0 && (
+    <span className="text-xs text-gray-500">
+      {selectedIds.length} selected
+    </span>
+  )}
+</div>
+
 
         {/* Severity Filter */}
         <select
@@ -323,59 +438,71 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
         <table className="min-w-[1400px] text-sm border-collapse">
           <thead className="bg-tmone-blue text-white sticky top-0 z-20">
             <tr>
-              {([
-                <th className="px-4 py-3 w-[56px] text-center">
-                    <input
-                      type="checkbox"
-                      checked={
-                        filtered.length > 0 && selectedIds.length === filtered.length
-                      }
-                      onChange={toggleAll}
-                    />
-                  </th>,
-                { key: "incidentId", label: "Incident ID", width: "w-[120px]" },
-                { key: "timestamp", label: "Time", width: "w-[180px]" },
-                { key: "customerName", label: "Customer", width: "w-[160px]" },
-                { key: "platform", label: "Platform", width: "w-[140px]" },
-                { key: "incidentName", label: "Incident", width: "w-[220px]" },
-                { key: "severity", label: "Severity", width: "w-[120px]" },
-                { key: "status", label: "Status", width: "w-[120px]" },
-                { key: "description", label: "Description", width: "w-[200px]" },
-                { key: "source", label: "Source", width: "w-[180px]" },
-              ] as {
-                key: keyof EventItem;
-                label: string;
-                width: string;
-              }[]).map((col) => {
+              {/* ===== CHECKBOX COLUMN ===== */}
+              <th className="w-[56px] px-2 align-top text-center">
+                <input
+                  type="checkbox"
+                  checked={
+                    filtered.length > 0 &&
+                    selectedIds.length === filtered.length
+                  }
+                  onChange={toggleAll}
+                />
+              </th>
+
+              {/* ===== DATA COLUMNS ===== */}
+              {columns.map((col) => {
                 const isActive = sortKey === col.key;
+
                 return (
-                <th
-                  key={col.key}
-                  className={`px-4 py-3 cursor-pointer text-left cursor-pointer select-none ${col.width}`}
-                  onClick={() => handleSort(col.key)}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>{col.label}</span>
-                    <div className="flex flex-col leading-none">
-                      <ChevronUp
-                        size={12}
-                        className={
-                          isActive && sortAsc ? "text-white" : "text-white/50"
-                        }
-                      />
-                      <ChevronDown
-                        size={12}
-                        className={ isActive && !sortAsc ? "text-white" : "text-white/50" }
-                      />
+                  <th
+                    key={col.key}
+                    className={`px-3 py-2 align-top ${col.width}`}
+                  >
+                    {/* COLUMN TITLE + SORT */}
+                    <div
+                      className="flex items-center justify-between cursor-pointer select-none"
+                      onClick={() => handleSort(col.key)}
+                    >
+                      <span className="font-semibold text-sm">
+                        {col.label}
+                      </span>
+
+                      <div className="flex flex-col leading-none">
+                        <ChevronUp
+                          size={12}
+                          className={
+                            isActive && sortAsc
+                              ? "text-white"
+                              : "text-white/50"
+                          }
+                        />
+                        <ChevronDown
+                          size={12}
+                          className={
+                            isActive && !sortAsc
+                              ? "text-white"
+                              : "text-white/50"
+                          }
+                        />
+                      </div>
                     </div>
-                  </div>
-                </th>
+
+                    {/* FILTER INPUT (BELOW TITLE) */}
+                    <div className="mt-2">
+                      {renderColumnFilter(col.key)}
+                    </div>
+                  </th>
                 );
-                })}
-              <th className="px-4 py-3 w-[100px]">Actions</th>  
+              })}
+
+              {/* ===== ACTIONS ===== */}
+              <th className="w-[100px] px-3 py-2 align-top">
+                Actions
+              </th>
             </tr>
           </thead>
-
+ 
           <tbody>
             {filtered.map((e) => (
               <tr key={e.incidentId} className="border-b hover:bg-blue-50">
@@ -422,30 +549,125 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
         )}
       </div>
 
-      {/* VIEW DETAILS MODAL */}
+      {/* ================= INCIDENT DETAIL DRAWER ================= */}
       {viewIncident && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
-          onClick={handleCloseView}
-        >
+        <>
+          {/* Overlay */}
           <div
-            className="bg-white p-6 rounded-xl w-96 relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-bold mb-4">Incident Details</h2>
-            <div className="space-y-2 text-sm">
-              <div><strong>ID:</strong> {viewIncident.incidentId}</div>
-              <div><strong>Time:</strong> {new Date(viewIncident.timestamp).toLocaleString()}</div>
-              <div><strong>Platform:</strong> {viewIncident.platform}</div>
-              <div><strong>Incident:</strong> {viewIncident.incidentName}</div>
-              <div><strong>Severity:</strong> {viewIncident.severity}</div>
-              <div><strong>Status:</strong> {viewIncident.status}</div>
-              <div><strong>Description:</strong> {viewIncident.description}</div>
-              <div><strong>Source:</strong> {viewIncident.source}</div>
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={() => setViewIncident(null)}
+          />
+
+          {/* Drawer */}
+          <div className="
+            fixed top-0 right-0 h-full w-[420px]
+            bg-white z-50
+            shadow-2xl
+            flex flex-col
+            animate-slide-in
+          ">
+            {/* Header */}
+            <div className="px-5 py-4 border-b flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">
+                  Incident Details
+                </h2>
+                <p className="text-xs text-gray-500">
+                  ID: {viewIncident.incidentId}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setViewIncident(null)}
+                className="text-gray-400 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 text-sm">
+              
+              {/* Status & Severity */}
+              <div className="flex gap-2">
+                <span className={`
+                  px-2 py-1 rounded text-xs font-semibold
+                  ${viewIncident.status === "Open" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}
+                `}>
+                  {viewIncident.status}
+                </span>
+
+                <span className="px-2 py-1 rounded bg-orange-100 text-orange-700 text-xs font-semibold">
+                  {viewIncident.severity}
+                </span>
+              </div>
+
+              {/* Core Info */}
+              <div>
+                <p className="text-xs text-gray-500">Incident Name</p>
+                <p className="font-semibold text-gray-900">
+                  {viewIncident.incidentName}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500">Platform</p>
+                <p>{viewIncident.platform}</p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500">Customer</p>
+                <p>{viewIncident.customerName ?? "-"}</p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500">Detected Time</p>
+                <p>{new Date(viewIncident.timestamp).toLocaleString()}</p>
+              </div>
+
+              {/* Description */}
+              <div>
+                <p className="text-xs text-gray-500">Description</p>
+                <p className="text-gray-800 whitespace-pre-line">
+                  {viewIncident.description}
+                </p>
+              </div>
+
+              {/* Source */}
+              <div>
+                <p className="text-xs text-gray-500">Source</p>
+                <p className="break-all text-gray-700">
+                  {viewIncident.source}
+                </p>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="border-t px-5 py-3 flex gap-2">
+              <button
+                className="flex-1 h-9 rounded bg-blue-600 text-white text-sm hover:bg-blue-700"
+                onClick={() => {
+                  setEditIncident(viewIncident);
+                  setViewIncident(null);
+                }}
+              >
+                Edit Incident
+              </button>
+
+              <button
+                className="flex-1 h-9 rounded bg-purple-600 text-white text-sm hover:bg-purple-700"
+                onClick={() => {
+                  handleSendReminder(viewIncident);
+                  setViewIncident(null);
+                }}
+              >
+                Notify
+              </button>
             </div>
           </div>
-        </div>
+        </>
       )}
+
 
       {/* EDIT DETAILS MODAL */}
       {editIncident && (
