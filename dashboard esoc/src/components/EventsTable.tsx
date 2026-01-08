@@ -4,6 +4,8 @@ import { ChevronUp, ChevronDown } from "lucide-react";
 import { sampleEvents } from "../data/events.sample";
 import { EventItem } from "../types/event";
 import { Search, X } from "lucide-react";
+import { Download } from "lucide-react";
+
 
 
 
@@ -345,93 +347,103 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
 
   return (
     <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)]">
-      <div className="flex items-center mb-4">
-        {/* Search */}
-        <div className="flex items-center gap-2"></div>
-        <input
-          className="h-9 w-[240px] border px-3 rounded text-sm"
-          placeholder="Search incident, description, source..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        {/* ================= BULK ACTION BAR ================= */}
-<div className="flex items-center gap-3 bg-white p-3 rounded-lg shadow-card mb-3">
-  <span className="text-sm font-medium text-gray-700">
-    Bulk Actions
-  </span>
+          <div className="flex items-center gap-4 mb-4">
+      {/* ================= SEARCH ================= */}
+      <input
+        className="
+          h-11 w-[260px]
+          bg-white border rounded-lg px-4
+          text-sm
+          shadow-card
+          focus:outline-none focus:ring-1 focus:ring-tmone-blue
+        "
+        placeholder="Search incident, description, source..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
 
-  <select
-    value={bulkStatus}
-    onChange={(e) => setBulkStatus(e.target.value)}
-    className="border rounded px-3 py-1.5 text-sm bg-white"
-  >
-    <option value="">Change Status</option>
-    <option value="Open">Open</option>
-    <option value="In Progress">In Progress</option>
-    <option value="Resolved">Resolved</option>
-    <option value="Closed">Closed</option>
-  </select>
+      {/* ================= BULK ACTIONS ================= */}
+      <div className="flex items-center gap-3 bg-white p-3 rounded-lg shadow-card">
+        <span className="text-sm font-medium text-gray-700">
+          Bulk Actions
+        </span>
 
-  <button
-    onClick={applyBulkStatus}
-    disabled={!bulkStatus || selectedIds.length === 0}
-    className={`
-      px-4 py-1.5 rounded text-sm font-medium
-      transition
-      ${
-        bulkStatus && selectedIds.length > 0
-          ? "bg-tmone-blue text-white hover:bg-tmone-blue/90"
-          : "bg-gray-200 text-gray-400 cursor-not-allowed"
-      }
-    `}
-  >
-    Apply
-  </button>
-
-  {selectedIds.length > 0 && (
-    <span className="text-xs text-gray-500">
-      {selectedIds.length} selected
-    </span>
-  )}
-</div>
-
-
-        {/* Severity Filter */}
         <select
-          value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value)}
-          className="h-9 w-[130px] border rounded px-2 text-sm"
+          value={bulkStatus}
+          onChange={(e) => setBulkStatus(e.target.value)}
+          className="border rounded px-3 py-1.5 text-sm bg-white"
         >
-          <option value="">All Severity</option>
-          <option value="Critical">Critical</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-
-        {/* Status Filter */}
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-9 w-[120px] border rounded px-2 text-sm"
-        >
-          <option value="">All Status</option>
+          <option value="">Change Status</option>
           <option value="Open">Open</option>
+          <option value="In Progress">In Progress</option>
           <option value="Resolved">Resolved</option>
+          <option value="Closed">Closed</option>
         </select>
-        
-        {/* Download Report Button */}
-        <div className="ml-auto">
+
         <button
-          onClick={handleDownloadReport}
-          disabled={filtered.length === 0}
-          className="h-9 px-4 bg-green-600 text-white rounded text-sm font-medium
-               hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={applyBulkStatus}
+          disabled={!bulkStatus || selectedIds.length === 0}
+          className={`
+            px-4 py-1.5 rounded text-sm font-medium transition
+            ${
+              bulkStatus && selectedIds.length > 0
+                ? "bg-tmone-blue text-white hover:bg-tmone-blue/90"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }
+          `}
         >
-          Download CSV Report
+          Apply
         </button>
+
+        {selectedIds.length > 0 && (
+          <span className="text-xs text-gray-500">
+            {selectedIds.length} selected
+          </span>
+        )}
+      </div>
+
+      {/* ================= EXPORT ================= */}
+      <div className="ml-auto relative">
+        <div className="group relative">
+          <button
+            disabled={filtered.length === 0}
+            className="
+              flex items-center gap-2
+              bg-white p-3 rounded-lg shadow-card
+              text-sm font-medium
+              hover:bg-gray-50
+              disabled:opacity-50 disabled:cursor-not-allowed
+            "
+          >
+            <Download className="h-4 w-4" />
+            Export
+            <ChevronDown className="h-4 w-4 text-gray-500" />
+          </button>
+
+          {filtered.length > 0 && (
+            <div className="
+              absolute right-0 mt-2 w-44
+              bg-white border rounded-lg shadow-card
+              opacity-0 scale-95
+              group-hover:opacity-100 group-hover:scale-100
+              transition-all z-50
+            ">
+              <button
+                onClick={handleDownloadReport}
+                className="
+                  w-full px-4 py-2 text-left text-sm
+                  hover:bg-gray-100
+                  flex items-center gap-2
+                "
+              >
+                <Download className="h-4 w-4" />
+                Export CSV
+              </button>
+            </div>
+          )}
         </div>
       </div>
+    </div>
 
       {/* TABLE */}
       <div className="flex-1 overflow-x-auto">
