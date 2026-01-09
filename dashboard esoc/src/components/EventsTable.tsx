@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { Eye, Trash2, Mail, Edit2, Check } from "lucide-react";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronRight } from "lucide-react";
 import { sampleEvents } from "../data/events.sample";
 import { EventItem } from "../types/event";
 import { Search, X } from "lucide-react";
@@ -394,8 +394,8 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
       );
 
     return (
-    <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)]">
-          <div className="flex items-center gap-3 relative z-50">
+    <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)] overflow-visible">
+          <div className="flex items-center gap-3 relative z-50 overflow-visible">
     {/* ================= BULK ACTIONS DROPDOWN ================= */}
           <div className="relative">
             <button
@@ -424,58 +424,55 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
             </button>
 
             {bulkOpen && (
-              <div className="
-                absolute left-0 mt-2 w-56
-                bg-white border rounded-lg shadow-card
-                z-50
-              "
-              onClick={(e) => e.stopPropagation()}
+              <div
+                className="
+                  absolute left-0 mt-2 w-56
+                  bg-white border rounded-lg shadow-card
+                  z-50
+                "
+                onClick={(e) => e.stopPropagation()}
               >
-                {/* INCIDENT LIFECYCLE */}
-                <DropdownItem
-                  label="Mark as Reviewed"
-                  onClick={() => setBulkAction("reviewed")}
-                />
-                <DropdownItem
-                  label="Under Investigation"
-                  onClick={() => setBulkAction("investigation")}
-                />
-                <DropdownItem
-                  label="Contained"
-                  onClick={() => setBulkAction("contained")}
-                />
-                <DropdownItem
-                  label="Resolved"
-                  onClick={() => setBulkAction("resolved")}
-                />
-                <DropdownItem
-                  label="Close Incident"
-                  onClick={() => setBulkAction("closed")}
-                />
+                {/* ===== INCIDENT LIFECYCLE ===== */}
+                <div className="relative group">
+                  <div className="flex items-center justify-between px-4 py-2 text-sm cursor-pointer hover:bg-gray-100">
+                    Incident Lifecycle
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </div>
+
+                  <div className="absolute top-0 left-full ml-1 hidden group-hover:block
+                                  w-56 bg-white border rounded-lg shadow-card">
+                    <DropdownItem label="Mark as Reviewed" onClick={() => setBulkAction("reviewed")} />
+                    <DropdownItem label="Under Investigation" onClick={() => setBulkAction("investigation")} />
+                    <DropdownItem label="Contained" onClick={() => setBulkAction("contained")} />
+                    <DropdownItem label="Resolved" onClick={() => setBulkAction("resolved")} />
+                    <DropdownItem label="Close Incident" onClick={() => setBulkAction("closed")} />
+                  </div>
+                </div>
+
+                {/* ===== ALERT HANDLING ===== */}
+                <div className="relative group">
+                  <div className="flex items-center justify-between px-4 py-2 text-sm cursor-pointer hover:bg-gray-100">
+                    Alert Handling
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </div>
+
+                  <div className="absolute top-0 left-full ml-1 hidden group-hover:block
+                                  w-56 bg-white border rounded-lg shadow-card">
+                    <DropdownItem label="False Positive" onClick={() => setBulkAction("false_positive")} />
+                    <DropdownItem label="Suppress Alerts" onClick={() => setBulkAction("suppress")} />
+                  </div>
+                </div>
 
                 <div className="border-t my-1" />
 
-                {/* OPERATIONAL */}
-                <DropdownItem
-                  label="False Positive"
-                  onClick={() => setBulkAction("false_positive")}
-                />
-                <DropdownItem
-                  label="Suppress Alerts"
-                  onClick={() => setBulkAction("suppress")}
-                />
-
-                <div className="border-t my-1" />
-
-                {/* GOVERNANCE */}
+                {/* ===== GOVERNANCE ===== */}
                 <DropdownItem
                   label="Archive"
                   onClick={() => setBulkAction("archive")}
                 />
               </div>
             )}
-          </div>
-
+            </div>
           {/* ================= APPLY ================= */}
           <button
             onClick={handleBulkAction}
