@@ -5,6 +5,7 @@ import { sampleEvents } from "../data/events.sample";
 import { EventItem } from "../types/event";
 import { Search, X } from "lucide-react";
 import { Download } from "lucide-react";
+import { Layers } from "lucide-react";
 
 
 
@@ -54,6 +55,8 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
   const [sortAsc, setSortAsc] = useState(true);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState<BulkAction | "">("");
+  const [bulkOpen, setBulkOpen] = useState(false);
+
   
 
   const [columnFilters, setColumnFilters] = useState<Partial<Record<keyof EventItem, string>>>({});
@@ -79,6 +82,13 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
     setLocalData(events);
   }, [events]);
 
+// ✅ ADD THIS RIGHT HERE
+  useEffect(() => {
+    const close = () => setBulkOpen(false);
+    if (bulkOpen) document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [bulkOpen]);
+  
   /* ===================== Filtering & Sorting ===================== */
     const filtered = useMemo(() => {
       return localData
@@ -360,123 +370,156 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
         />
       );
     };
-
-  return (
-    <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)]">
-          <div className="flex items-center gap-4 mb-4">
-      {/* ================= SEARCH ================= */}
-      <input
-        className="
-          h-11 w-[260px]
-          bg-white border rounded-lg px-4
-          text-sm
-          shadow-card
-          focus:outline-none focus:ring-1 focus:ring-tmone-blue
-        "
-        placeholder="Search incident, description, source..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
-
-      {/* ================= BULK ACTIONS ================= */}
-      <div className="flex items-center gap-3 bg-white p-3 rounded-lg shadow-card">
-        <span className="text-sm font-medium text-gray-700">
-          Bulk Actions
-        </span>
-
-        <select
-          value={bulkAction}
-          onChange={(e) => setBulkAction(e.target.value as BulkAction)}
-          className="border rounded px-3 py-2 text-sm bg-white min-w-[220px]"
-        >
-          <option value="">Select Action</option>
-
-          {/* INCIDENT LIFECYCLE */}
-          <option value="reviewed">Mark as Reviewed</option>
-          <option value="investigation">Under Investigation</option>
-          <option value="contained">Contained</option>
-          <option value="resolved">Resolved</option>
-          <option value="closed">Close Incident</option>
-
-          <option disabled>────────────</option>
-
-          {/* OPERATIONAL */}
-          <option value="false_positive">False Positive</option>
-          <option value="suppress">Suppress Alerts</option>
-
-          <option disabled>────────────</option>
-
-          {/* GOVERNANCE */}
-          <option value="export">Export Selected</option>
-          <option value="archive">Archive</option>
-        </select>
-
+    const DropdownItem = ({
+        label,
+        onClick,
+      }: {
+        label: string;
+        onClick: () => void;
+      }) => (
         <button
-          onClick={handleBulkAction}
-          disabled={!bulkAction || selectedIds.length === 0}
-          className={`
-            px-4 py-2 rounded text-sm font-medium transition
-            ${
-              bulkAction && selectedIds.length > 0
-                ? "bg-tmone-blue text-white hover:bg-tmone-blue/90"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }
-          `}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+            setBulkOpen(false);
+          }}
+          className="
+            w-full px-4 py-2 text-left
+            text-sm text-gray-700
+            hover:bg-gray-100
+          "
         >
-          Apply
+          {label}
         </button>
+      );
 
-        {selectedIds.length > 0 && (
-          <span className="text-xs text-gray-500">
-            {selectedIds.length} selected
-          </span>
-        )}
-      </div>
+    return (
+    <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)]">
+          <div className="flex items-center gap-3 relative z-50">
+    {/* ================= BULK ACTIONS DROPDOWN ================= */}
+          <div className="relative">
+            <button
+              onClick={ (e) => {
+                e.stopPropagation();
+                setBulkOpen((prev) => !prev);
+              }}
+              className="
+                flex items-center gap-2
+                bg-tmone-blue text-white
+                px-4 py-3 rounded-lg
+                text-sm font-medium
+                shadow-card
+                hover:bg-tmone-blue/90
+              "
+            >
+              <Layers className="h-4 w-4" />
 
+              <span>Bulk Actions</span>
+              
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${
+                  bulkOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
 
-      {/* ================= EXPORT ================= */}
-      <div className="ml-auto relative">
-        <div className="group relative">
+            {bulkOpen && (
+              <div className="
+                absolute left-0 mt-2 w-56
+                bg-white border rounded-lg shadow-card
+                z-50
+              "
+              onClick={(e) => e.stopPropagation()}
+              >
+                {/* INCIDENT LIFECYCLE */}
+                <DropdownItem
+                  label="Mark as Reviewed"
+                  onClick={() => setBulkAction("reviewed")}
+                />
+                <DropdownItem
+                  label="Under Investigation"
+                  onClick={() => setBulkAction("investigation")}
+                />
+                <DropdownItem
+                  label="Contained"
+                  onClick={() => setBulkAction("contained")}
+                />
+                <DropdownItem
+                  label="Resolved"
+                  onClick={() => setBulkAction("resolved")}
+                />
+                <DropdownItem
+                  label="Close Incident"
+                  onClick={() => setBulkAction("closed")}
+                />
+
+                <div className="border-t my-1" />
+
+                {/* OPERATIONAL */}
+                <DropdownItem
+                  label="False Positive"
+                  onClick={() => setBulkAction("false_positive")}
+                />
+                <DropdownItem
+                  label="Suppress Alerts"
+                  onClick={() => setBulkAction("suppress")}
+                />
+
+                <div className="border-t my-1" />
+
+                {/* GOVERNANCE */}
+                <DropdownItem
+                  label="Archive"
+                  onClick={() => setBulkAction("archive")}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* ================= APPLY ================= */}
           <button
-            disabled={filtered.length === 0}
+            onClick={handleBulkAction}
+            disabled={!bulkAction || selectedIds.length === 0}
+            className={`
+              px-4 py-3 rounded-lg
+              text-sm font-medium
+              transition
+              ${
+                bulkAction && selectedIds.length > 0
+                  ? "bg-tmone-blue text-white hover:bg-tmone-blue/90"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }
+            `}
+          >
+            Apply
+          </button>
+
+          {/* ================= EXPORT ================= */}
+          <button
+            onClick={handleDownloadReport}
+            disabled={selectedIds.length === 0}
             className="
               flex items-center gap-2
-              bg-white p-3 rounded-lg shadow-card
+              bg-green-600 text-white
+              px-4 py-3 rounded-lg
               text-sm font-medium
-              hover:bg-gray-50
+              shadow-card
+              hover:bg-green-700
               disabled:opacity-50 disabled:cursor-not-allowed
             "
           >
             <Download className="h-4 w-4" />
             Export
-            <ChevronDown className="h-4 w-4 text-gray-500" />
           </button>
 
-          {filtered.length > 0 && (
-            <div className="
-              absolute right-0 mt-2 w-44
-              bg-white border rounded-lg shadow-card
-              opacity-0 scale-95
-              group-hover:opacity-100 group-hover:scale-100
-              transition-all z-50
-            ">
-              <button
-                onClick={handleDownloadReport}
-                className="
-                  w-full px-4 py-2 text-left text-sm
-                  hover:bg-gray-100
-                  flex items-center gap-2
-                "
-              >
-                <Download className="h-4 w-4" />
-                Export CSV
-              </button>
-            </div>
+          {selectedIds.length > 0 && (
+            <span className="text-xs text-gray-500">
+              {selectedIds.length} selected
+            </span>
           )}
         </div>
-      </div>
-    </div>
 
+          
       {/* TABLE */}
       <div className="flex-1 overflow-x-auto">
         <table className="min-w-[1400px] text-sm border-collapse">
