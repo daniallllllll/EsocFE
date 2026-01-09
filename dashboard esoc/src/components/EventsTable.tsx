@@ -32,6 +32,17 @@ const columns: {
   { key: "source", label: "Source", width: "w-[140px]" },
 ];
 
+type BulkAction =
+  | "reviewed"
+  | "investigation"
+  | "contained"
+  | "resolved"
+  | "closed"
+  | "false_positive"
+  | "suppress"
+  | "archive"
+  | "export";
+
 /* =====================================================
    COMPONENT
    ===================================================== */
@@ -42,7 +53,8 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
   const [sortKey, setSortKey] = useState<keyof EventItem>("timestamp");
   const [sortAsc, setSortAsc] = useState(true);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [bulkStatus, setBulkStatus] = useState("");
+  const [bulkAction, setBulkAction] = useState<BulkAction | "">("");
+  
 
   const [columnFilters, setColumnFilters] = useState<Partial<Record<keyof EventItem, string>>>({});
   const [viewIncident, setViewIncident] = useState<EventItem | null>(null);
@@ -144,20 +156,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
       }
     };
 
-      const applyBulkStatus = () => {
-    if (!bulkStatus || selectedIds.length === 0) return;
-
-    setLocalData((prev) =>
-      prev.map((row) =>
-        selectedIds.includes(row.incidentId)
-          ? { ...row, status: bulkStatus }
-          : row
-      )
-    );
-
-    setSelectedIds([]);
-    setBulkStatus("");
-  };
+      
 
 
   /* ===================== View Details ===================== */
@@ -265,25 +264,42 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
       URL.revokeObjectURL(url);
     };
 
-    /* ===================== Apply Bulk Status ===================== */
-    const handleApplyBulkStatus = () => {
-      if (!bulkStatus || selectedIds.length === 0) return;
+      const handleBulkAction = () => {
+        if (!bulkAction || selectedIds.length === 0) return;
 
-      setLocalData((prev) =>
-        prev.map((item) =>
-          selectedIds.includes(item.incidentId)
-            ? { ...item, status: bulkStatus }
-            : item
-        )
-      );
+        // Export is special
+        if (bulkAction === "export") {
+          handleDownloadReport();
+          return;
+        }
 
-      setReminderMessage(
-        `Status updated to "${bulkStatus}" for ${selectedIds.length} incident(s).`
-      );
+        const statusMap: Record<string, string> = {
+          reviewed: "Reviewed",
+          investigation: "Under Investigation",
+          contained: "Contained",
+          resolved: "Resolved",
+          closed: "Closed",
+          false_positive: "False Positive",
+          suppress: "Suppressed",
+          archive: "Archived",
+        };
 
-      setBulkStatus("");
-      setSelectedIds([]);
-    };
+        setLocalData((prev) =>
+          prev.map((item) =>
+            selectedIds.includes(item.incidentId)
+              ? { ...item, status: statusMap[bulkAction] }
+              : item
+          )
+        );
+
+        setReminderMessage(
+          `Bulk action "${bulkAction.replace("_", " ")}" applied to ${selectedIds.length} incident(s).`
+        );
+
+        setBulkAction("");
+        setSelectedIds([]);
+      };
+
     const renderColumnFilter = (key: keyof EventItem) => {
       // Dropdown filters
       if (key === "severity") {
@@ -369,24 +385,39 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
         </span>
 
         <select
-          value={bulkStatus}
-          onChange={(e) => setBulkStatus(e.target.value)}
-          className="border rounded px-3 py-1.5 text-sm bg-white"
+          value={bulkAction}
+          onChange={(e) => setBulkAction(e.target.value as BulkAction)}
+          className="border rounded px-3 py-2 text-sm bg-white min-w-[220px]"
         >
-          <option value="">Change Status</option>
-          <option value="Open">Open</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Resolved">Resolved</option>
-          <option value="Closed">Closed</option>
+          <option value="">Select Action</option>
+
+          {/* INCIDENT LIFECYCLE */}
+          <option value="reviewed">Mark as Reviewed</option>
+          <option value="investigation">Under Investigation</option>
+          <option value="contained">Contained</option>
+          <option value="resolved">Resolved</option>
+          <option value="closed">Close Incident</option>
+
+          <option disabled>────────────</option>
+
+          {/* OPERATIONAL */}
+          <option value="false_positive">False Positive</option>
+          <option value="suppress">Suppress Alerts</option>
+
+          <option disabled>────────────</option>
+
+          {/* GOVERNANCE */}
+          <option value="export">Export Selected</option>
+          <option value="archive">Archive</option>
         </select>
 
         <button
-          onClick={applyBulkStatus}
-          disabled={!bulkStatus || selectedIds.length === 0}
+          onClick={handleBulkAction}
+          disabled={!bulkAction || selectedIds.length === 0}
           className={`
-            px-4 py-1.5 rounded text-sm font-medium transition
+            px-4 py-2 rounded text-sm font-medium transition
             ${
-              bulkStatus && selectedIds.length > 0
+              bulkAction && selectedIds.length > 0
                 ? "bg-tmone-blue text-white hover:bg-tmone-blue/90"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }
@@ -401,6 +432,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
           </span>
         )}
       </div>
+
 
       {/* ================= EXPORT ================= */}
       <div className="ml-auto relative">
