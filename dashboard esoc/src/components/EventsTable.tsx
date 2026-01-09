@@ -44,6 +44,21 @@ type BulkAction =
   | "archive"
   | "export";
 
+  const severityClass = {
+  Critical: "bg-red-100 text-red-700",
+  High: "bg-orange-100 text-orange-700",
+  Medium: "bg-yellow-100 text-yellow-700",
+  Low: "bg-green-100 text-green-700",
+};
+
+const statusClass = {
+  New: "bg-blue-100 text-blue-700",
+  Open: "bg-purple-100 text-purple-700",
+  Resolved: "bg-green-100 text-green-700",
+  Closed: "bg-gray-200 text-gray-600",
+};
+
+
 /* =====================================================
    COMPONENT
    ===================================================== */
@@ -88,6 +103,11 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
     if (bulkOpen) document.addEventListener("click", close);
     return () => document.removeEventListener("click", close);
   }, [bulkOpen]);
+
+  useEffect(() => {
+  setSelectedIds([]);
+  }, [columnFilters, search]);
+
   
   /* ===================== Filtering & Sorting ===================== */
     const filtered = useMemo(() => {
@@ -358,7 +378,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
       return (
         <input
           type="text"
-          className="w-full border border-gray-300 roundedmpx-2 py-1 text-xs text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500"
+          className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500"
           placeholder="Filter..."
           value={columnFilters[key] ?? ""}
           onChange={(e) =>
@@ -381,6 +401,8 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
           onClick={(e) => {
             e.stopPropagation();
             onClick();
+            setBulkAction("");
+            setSelectedIds([]);
             setBulkOpen(false);
           }}
           className="
@@ -519,8 +541,8 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
           
       {/* TABLE */}
       <div className="flex-1 overflow-x-auto">
-        <table className="min-w-[1400px] text-sm border-collapse">
-          <thead className="bg-tmone-blue text-white sticky top-0 z-20">
+        <table className="min-w-[1400px] text-sm border-collapse bg-white">
+          <thead className="px-4 py-3 text-left text-sm font-semibold text-gray-700 !bg-white whitespace-nowrap border-b">
             <tr>
               {/* ===== CHECKBOX COLUMN ===== */}
               <th className="w-[56px] px-2 align-top text-center">
@@ -541,7 +563,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
                 return (
                   <th
                     key={col.key}
-                    className={`px-3 py-2 align-top ${col.width}`}
+                    className={`px-3 py-2 align-top ${col.width} hover:bg-gray-50 transition`}
                   >
                     {/* COLUMN TITLE + SORT */}
                     <div
@@ -557,23 +579,23 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
                           size={12}
                           className={
                             isActive && sortAsc
-                              ? "text-white"
-                              : "text-white/50"
+                              ? "text-gray-700"
+                              : "text-gray-300"
                           }
                         />
                         <ChevronDown
                           size={12}
                           className={
                             isActive && !sortAsc
-                              ? "text-white"
-                              : "text-white/50"
+                              ? "text-gray-700"
+                              : "text-gray-300"
                           }
                         />
                       </div>
                     </div>
 
                     {/* FILTER INPUT (BELOW TITLE) */}
-                    <div className="mt-2">
+                    <div className="mt-2 flex items-center gap-1">
                       {renderColumnFilter(col.key)}
                     </div>
                   </th>
@@ -589,7 +611,16 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
  
           <tbody>
             {filtered.map((e) => (
-              <tr key={e.incidentId} className="border-b hover:bg-blue-50">
+              <tr
+                key={e.incidentId}
+                className="
+                  border-b
+                  odd:bg-white
+                  even:bg-gray-50
+                  hover:bg-blue-50
+                  transition
+                "
+              >
                 <td className="px-4 py-2 w-[56px] text-center">
                   <input
                     type="checkbox"
@@ -597,14 +628,25 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
                     onChange={() => toggleRow(e.incidentId)}
                   />
                 </td>
-                <td className="px-4 py-2">{e.incidentId}</td>
-                <td className="px-4 py-2">{new Date(e.timestamp).toLocaleString()}</td>
-                <td className="px-4 py-2">{e.customerName}</td>
-                <td className="px-4 py-2">{e.platform}</td>
-                <td className="px-4 py-2">{e.incidentName}</td>
-                <td className="px-4 py-2">{e.severity}</td>
-                <td className="px-4 py-2">{e.status}</td>
-                <td className="px-4 py-2 max-w-xs truncate">{e.description}</td>
+                <td className="px-4 py-3 text-sm hover:bg-gray-50">{e.incidentId}</td>
+                <td className="px-4 py-3 text-sm hover:bg-gray-50">{new Date(e.timestamp).toLocaleString()}</td>
+                <td className="px-4 py-3 text-sm hover:bg-gray-50">{e.customerName}</td>
+                <td className="px-4 py-3 text-sm hover:bg-gray-50">{e.platform}</td>
+                <td className="px-4 py-3 text-sm hover:bg-gray-50">{e.incidentName}</td>
+                <td className="px-4 py-3 text-sm hover:bg-gray-50">
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${severityClass[e.severity]}`}>
+                  {e.severity}
+                </span>
+              </td>
+
+              <td className="px-4 py-2">
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${statusClass[e.status]}`}>
+                  {e.status}
+                </span>
+              </td>
+                <td className="px-4 py-2 max-w-xs truncate" title={e.description}>
+                  {e.description}
+                </td>
                 <td className="px-4 py-2 max-w-xs truncate">{e.source}</td>
                 <td className="px-4 py-2 flex gap-2">
                   <Eye
