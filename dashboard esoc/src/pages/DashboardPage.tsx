@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import DashboardHeader from "../components/DashboardHeader";
 import { useNavigate } from "react-router-dom";
-import EventsTable from "../components/EventsTable";
+import {EventsTable} from "../components/EventsTable";
 import { EventItem } from "../data/events.sample";
 
 export default function DashboardPage() {
@@ -39,4 +39,6 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+
+
 }
