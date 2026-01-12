@@ -58,6 +58,72 @@ const statusClass = {
   Closed: "bg-gray-200 text-gray-600",
 };
 
+/* =====================================================
+   HELPER COMPONENTS
+   ===================================================== */
+
+const MultiSelectFilter = ({ options, selected, onChange, label }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredOptions = options.filter((opt: string) =>
+    opt.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="relative w-full font-normal">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between border border-gray-300 rounded px-2 py-1 text-[11px] bg-white hover:border-orange-400"
+      >
+        <span className="truncate">{selected.length > 0 ? `${selected.length} Selected` : `All ${label}`}</span>
+        <ChevronDown size={10} className={isOpen ? "rotate-180 transition-transform" : "transition-transform"} />
+      </button>
+
+      {isOpen && (
+        <>
+          {/* Transparent click-away overlay */}
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          
+          <div className="absolute top-full left-0 mt-1 w-52 bg-white border rounded shadow-xl z-50 p-2 animate-in fade-in zoom-in duration-100">
+            <div className="relative mb-2">
+               <Search size={12} className="absolute left-2 top-2 text-gray-400" />
+               <input
+                className="w-full pl-7 pr-2 py-1 border rounded text-xs outline-none focus:ring-1 focus:ring-orange-500"
+                placeholder="Search..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            
+            <div className="max-h-40 overflow-y-auto custom-scrollbar">
+              {filteredOptions.map((opt: string) => (
+                <label key={opt} className="flex items-center gap-2 px-1 py-1.5 hover:bg-gray-50 rounded cursor-pointer text-xs">
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                    checked={selected.includes(opt)}
+                    onChange={() => {
+                      const next = selected.includes(opt) 
+                        ? selected.filter((s: string) => s !== opt) 
+                        : [...selected, opt];
+                      onChange(next);
+                    }}
+                  />
+                  <span className="text-gray-700">{opt}</span>
+                </label>
+              ))}
+              {filteredOptions.length === 0 && (
+                <div className="text-center py-2 text-gray-400 text-[10px]">No results found</div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 /* =====================================================
    COMPONENT
@@ -74,7 +140,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
 
   
 
-  const [columnFilters, setColumnFilters] = useState<Partial<Record<keyof EventItem, string>>>({});
+  const [columnFilters, setColumnFilters] = useState<Partial<Record<keyof EventItem, string[]>>>({});
   const [viewIncident, setViewIncident] = useState<EventItem | null>(null);
   const [editIncident, setEditIncident] = useState<EventItem | null>(null);
   const [editStatus, setEditStatus] = useState("");
@@ -132,16 +198,14 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
 
         /* ===== COLUMN FILTERS (SINGLE SOURCE OF TRUTH) ===== */
         .filter((e) => {
-          return Object.entries(columnFilters).every(([key, value]) => {
-            if (!value) return true;
+          return Object.entries(columnFilters).every(([key, values]) => {
+            if (!values || (Array.isArray(values) && values.length === 0)) return true;
 
-            const cell = e[key as keyof EventItem];
-            if (!cell) return false;
+            const cellValue = String(e[key as keyof EventItem] ?? "");
 
-            return String(cell)
-              .toLowerCase()
-              .includes(value.toLowerCase());
+            return values.includes(cellValue);
           });
+            
         })
 
         /* ===== SORTING ===== */
@@ -250,7 +314,12 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
 
       /* ===================== Download Report ===================== */
     const handleDownloadReport = () => {
+
+      const dataToExport = filtered.filter((e) =>
+        selectedIds.includes(e.incidentId)
+      );
       if (filtered.length === 0) return;
+
 
       const headers = [
         "Incident ID",
@@ -264,7 +333,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
         "Source",
       ];
 
-      const rows = filtered.map((e) => [
+      const rows = dataToExport.map((e) => [
         e.incidentId,
         new Date(e.timestamp).toLocaleString(),
         e.customerName ?? "",
@@ -331,65 +400,36 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
       };
 
     const renderColumnFilter = (key: keyof EventItem) => {
-      // Dropdown filters
-      if (key === "severity") {
-        return (
-          <select
-            className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500"
-            value={columnFilters[key] ?? ""}
-            onChange={(e) =>
-              setColumnFilters((prev) => ({
-                ...prev,
-                [key]: e.target.value,
-              }))
-            }
-          >
-            <option value="">All</option>
-            <option value="Critical">Critical</option>
-            <option value="High">High</option>
-            <option value="Medium">Medium</option>
-            <option value="Low">Low</option>
-          </select>
-        );
-      }
+        // 1. Get current selections for this specific column
+        const currentSelections = columnFilters[key] || [];
 
-      if (key === "status") {
+        // 2. Logic to generate the List of Values (LOV)
+        const getOptions = (k: keyof EventItem) => {
+          if (k === "severity") return ["Critical", "High", "Medium", "Low"];
+          if (k === "status") return ["New", "Open", "Resolved", "Closed"];
+          
+          // For other columns, extract unique values currently in your data
+          return Array.from(new Set(localData.map((item) => String(item[k] ?? ""))))
+            .filter(Boolean)
+            .sort();
+        };
+
+        const columnLabel = columns.find((c) => c.key === key)?.label || "Value";
+
+        // 3. Return the new Multi-Select Searchable component
         return (
-          <select
-            className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500"
-            value={columnFilters[key] ?? ""}
-            onChange={(e) =>
-              setColumnFilters((prev) => ({
-                ...prev,
-                [key]: e.target.value,
-              }))
+          <MultiSelectFilter
+            label={columnLabel}
+            options={getOptions(key)}
+            selected={currentSelections}
+            onChange={(vals: string[]) => 
+              setColumnFilters((prev) => ({ ...prev, [key]: vals }))
             }
-          >
-            <option value="">All</option>
-            <option value="Open">Open</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Resolved">Resolved</option>
-            <option value="Closed">Closed</option>
-          </select>
+          />
         );
-      }
+      };
       
-      // Default text filter
-      return (
-        <input
-          type="text"
-          className="w-full border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500"
-          placeholder="Filter..."
-          value={columnFilters[key] ?? ""}
-          onChange={(e) =>
-            setColumnFilters((prev) => ({
-              ...prev,
-              [key]: e.target.value,
-            }))
-          }
-        />
-      );
-    };
+      
     const DropdownItem = ({
         label,
         onClick,
@@ -401,8 +441,6 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = sampleEvents,
           onClick={(e) => {
             e.stopPropagation();
             onClick();
-            setBulkAction("");
-            setSelectedIds([]);
             setBulkOpen(false);
           }}
           className="
