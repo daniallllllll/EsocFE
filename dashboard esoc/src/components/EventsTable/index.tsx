@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { useEventTable } from "./useEventTable";
 import { MultiSelectFilter } from "./MultiSelectFilter";
 import { EventItem } from "../../types/event";
-import { ChevronUp, ChevronDown, Layers, Download, Eye, Edit2, Mail, Check, X } from "lucide-react";
+import { ChevronUp, ChevronDown, Layers, Download, Eye, Edit2, Mail, Check, X, ChevronRight } from "lucide-react";
 
-// Import your new Modals
+// Import Modals
 import { ViewIncidentModal } from "./Modals/ViewIncidentModal";
 import { EditIncidentModal } from "./Modals/EditIncidentModal";
 import { EmailReminderModal } from "./Modals/EmailReminderModal";
@@ -39,8 +39,10 @@ const severityClass: Record<string, string> = {
 const statusClass: Record<string, string> = {
   New: "bg-blue-100 text-blue-700",
   Open: "bg-purple-100 text-purple-700",
+  "In Progress": "bg-indigo-100 text-indigo-700",
   Resolved: "bg-green-100 text-green-700",
   Closed: "bg-gray-200 text-gray-600",
+  "False Positive": "bg-slate-100 text-slate-600",
 };
 
 /* =====================================================
@@ -74,7 +76,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
   // Define unique options for filters
   const getOptions = (key: keyof EventItem) => {
     if (key === "severity") return ["Critical", "High", "Medium", "Low"];
-    if (key === "status") return ["New", "Open", "Resolved", "Closed"];
+    if (key === "status") return ["New", "Open", "In Progress", "Resolved", "Closed", "False Positive"];
     return Array.from(new Set(localData.map((item) => String(item[key] ?? ""))))
       .filter(Boolean)
       .sort();
@@ -83,7 +85,8 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
   /* ===================== HANDLERS ===================== */
   const handleBulkAction = (action: string) => {
     const statusMap: Record<string, string> = {
-      reviewed: "Reviewed",
+      reviewed: "Open",
+      investigation: "In Progress",
       resolved: "Resolved",
       closed: "Closed",
       false_positive: "False Positive",
@@ -97,7 +100,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
       )
     );
 
-    setReminderMessage(`Applied ${action} to ${selectedIds.length} items.`);
+    setReminderMessage(`Bulk Action: "${action.replace("_", " ")}" applied to ${selectedIds.length} items.`);
     setBulkAction("");
     setSelectedIds([]);
   };
@@ -137,17 +140,31 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
           </button>
 
           {bulkOpen && (
-            <div className="absolute left-0 mt-2 w-56 bg-white border rounded-lg shadow-xl z-[100]">
-              <div className="p-2 border-b bg-gray-50 text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                Incident Status
-              </div>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => { setBulkAction("reviewed"); setBulkOpen(false); }}>Mark as Reviewed</button>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => { setBulkAction("resolved"); setBulkOpen(false); }}>Resolve Incident</button>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => { setBulkAction("closed"); setBulkOpen(false); }}>Close Incident</button>
-              <div className="p-2 border-b bg-gray-50 text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                Alert Handling
-              </div>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => { setBulkAction("false_positive"); setBulkOpen(false); }}>False Positive</button>
+            <div className="absolute left-0 mt-2 w-64 bg-white border rounded-lg shadow-xl z-[100] py-1 animate-in fade-in zoom-in duration-100">
+              <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Incident Sta</div>
+              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex justify-between items-center" onClick={() => { setBulkAction("reviewed"); setBulkOpen(false); }}>
+                Mark as Reviewed <ChevronRight size={12} className="text-gray-300"/>
+              </button>
+              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex justify-between items-center" onClick={() => { setBulkAction("investigation"); setBulkOpen(false); }}>
+                Start Investigation <ChevronRight size={12} className="text-gray-300"/>
+              </button>
+              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex justify-between items-center" onClick={() => { setBulkAction("resolved"); setBulkOpen(false); }}>
+                Resolve Selected <ChevronRight size={12} className="text-gray-300"/>
+              </button>
+              
+              <div className="border-t my-1"></div>
+              
+              <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Alert Handling</div>
+              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-600" onClick={() => { setBulkAction("false_positive"); setBulkOpen(false); }}>
+                False Positive
+              </button>
+              
+              <div className="border-t my-1"></div>
+              
+              <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Management</div>
+              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => { exportToCSV(filtered.filter(e => selectedIds.includes(e.incidentId))); setBulkOpen(false); }}>
+                Export Batch
+              </button>
             </div>
           )}
         </div>
@@ -155,7 +172,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         {bulkAction && selectedIds.length > 0 && (
           <button
             onClick={() => handleBulkAction(bulkAction)}
-            className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium"
+            className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium animate-in slide-in-from-left-2"
           >
             <Check className="h-4 w-4" />
             Apply {bulkAction.replace("_", " ")}
@@ -174,7 +191,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         {selectedIds.length > 0 && (
           <div className="flex items-center gap-2 ml-auto">
             <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-              {selectedIds.length} incidents selected
+              {selectedIds.length} selected
             </span>
             <button onClick={() => setSelectedIds([])} className="text-gray-400 hover:text-red-500">
               <X className="h-4 w-4" />
@@ -184,13 +201,14 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
       </div>
 
       {/* 2. Table */}
-      <div className="flex-1 overflow-x-auto">
+      <div className="flex-1 overflow-x-auto custom-scrollbar">
         <table className="min-w-[1400px] text-sm border-collapse">
           <thead>
-            <tr className="border-b">
-              <th className="px-2 py-3">
+            <tr className="border-b bg-gray-50/50">
+              <th className="px-2 py-3 w-10">
                 <input
                   type="checkbox"
+                  className="rounded border-gray-300 text-[#0052CC] focus:ring-[#0052CC]"
                   checked={filtered.length > 0 && selectedIds.length === filtered.length}
                   onChange={toggleAll}
                 />
@@ -198,7 +216,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
               {columns.map((col) => (
                 <th key={col.key} className={`px-3 py-2 align-top ${col.width}`}>
                   <div
-                    className="flex items-center justify-between font-semibold mb-2 cursor-pointer select-none"
+                    className="flex items-center justify-between font-semibold mb-2 cursor-pointer select-none text-gray-600"
                     onClick={() => {
                       if (sortKey === col.key) setSortAsc(!sortAsc);
                       else { setSortKey(col.key); setSortAsc(true); }
@@ -218,36 +236,57 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
                   />
                 </th>
               ))}
-              <th className="px-3 py-2">Actions</th>
+              <th className="px-3 py-2 text-gray-600">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((item) => (
-              <tr key={item.incidentId} className="border-b hover:bg-gray-50 transition-colors">
+              <tr key={item.incidentId} className="border-b hover:bg-blue-50/30 transition-colors group">
                 <td className="px-2 py-3 text-center">
                   <input
                     type="checkbox"
+                    className="rounded border-gray-300 text-[#0052CC] focus:ring-[#0052CC]"
                     checked={selectedIds.includes(item.incidentId)}
                     onChange={() => toggleRow(item.incidentId)}
                   />
                 </td>
-                <td className="px-3 py-3">{item.incidentId}</td>
-                <td className="px-3 py-3">{new Date(item.timestamp).toLocaleString()}</td>
-                <td className="px-3 py-3">{item.customerName}</td>
-                <td className="px-3 py-3">{item.platform}</td>
-                <td className="px-3 py-3">{item.incidentName}</td>
+                <td className="px-3 py-3 font-medium text-gray-700">{item.incidentId}</td>
+                <td className="px-3 py-3 text-gray-500">{new Date(item.timestamp).toLocaleString()}</td>
+                <td className="px-3 py-3 text-gray-700">{item.customerName}</td>
+                <td className="px-3 py-3 text-gray-700">{item.platform}</td>
+                <td className="px-3 py-3 text-gray-700">{item.incidentName}</td>
                 <td className="px-3 py-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${severityClass[item.severity]}`}>{item.severity}</span>
+                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${severityClass[item.severity]}`}>{item.severity}</span>
                 </td>
                 <td className="px-3 py-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${statusClass[item.status]}`}>{item.status}</span>
+                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${statusClass[item.status] || "bg-gray-100 text-gray-600"}`}>{item.status}</span>
                 </td>
-                <td className="px-3 py-3 truncate max-w-[160px]">{item.description}</td>
-                <td className="px-3 py-3">{item.source}</td>
-                <td className="px-3 py-3 flex gap-2">
-                  <Eye size={16} className="text-blue-600 cursor-pointer" onClick={() => setViewIncident(item)} />
-                  <Edit2 size={16} className="text-green-600 cursor-pointer" onClick={() => setEditIncident(item)} />
-                  <Mail size={16} className="text-purple-600 cursor-pointer" onClick={() => setEmailIncident(item)} />
+                <td className="px-3 py-3 truncate max-w-[160px] text-gray-500">{item.description}</td>
+                <td className="px-3 py-3 text-gray-400">{item.source}</td>
+                <td className="px-3 py-3">
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => setViewIncident(item)}
+                      className="p-1 hover:bg-blue-100 rounded-md transition-colors text-blue-600"
+                      title="View Details"
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <button 
+                      onClick={() => setEditIncident(item)}
+                      className="p-1 hover:bg-green-100 rounded-md transition-colors text-green-600"
+                      title="Edit Incident"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => setEmailIncident(item)}
+                      className="p-1 hover:bg-purple-100 rounded-md transition-colors text-purple-600"
+                      title="Send Notification"
+                    >
+                      <Mail size={16} />
+                    </button>
+                    </div>
                 </td>
               </tr>
             ))}
@@ -270,6 +309,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
           onClose={() => setEditIncident(null)}
           onSave={(id, updates) => {
             setLocalData(prev => prev.map(item => item.incidentId === id ? { ...item, ...updates } : item));
+            setReminderMessage("Incident updated successfully.");
             setEditIncident(null);
           }}
         />
@@ -279,18 +319,20 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
           incident={emailIncident}
           onClose={() => setEmailIncident(null)}
           onSend={(data) => {
-            console.log("Email Sent to", data);
             setReminderMessage(`Notification email sent to ${data.to}.`);
             setEmailIncident(null);
           }}
         />
       )}
 
-      {/* Reminder Message Popup */}
+      {/* Toast Notification */}
       {reminderMessage && (
-        <div className="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-[100] flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-          <span>{reminderMessage}</span>
-          <button onClick={() => setReminderMessage(null)}><X size={14}/></button>
+        <div className="fixed bottom-6 right-6 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-2xl z-[100] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4">
+          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+          <span className="text-sm font-medium">{reminderMessage}</span>
+          <button onClick={() => setReminderMessage(null)} className="ml-2 text-gray-400 hover:text-white transition-colors">
+            <X size={16}/>
+          </button>
         </div>
       )}
     </div>
