@@ -1,98 +1,164 @@
-import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
-import { EventItem } from "../../../types/event";
+import React, { useState } from "react";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css'; // Import the styles
+import { X, Minus, Maximize2, Minimize2 , Send, ChevronDown, MoreVertical, Trash2, Paperclip } from "lucide-react";
 
 interface EmailProps {
-  incident: EventItem | null;
+  incident: any;
   onClose: () => void;
-  onSend: (emailData: { to: string; subject: string; body: string }) => void;
+  onSend: (data: any) => void;
 }
 
 export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, onSend }) => {
+  const [showCC, setShowCC] = useState(false);
   const [to, setTo] = useState("");
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
+  const [cc, setCc] = useState("");
+  const [subject, setSubject] = useState(`Incident Alert: ${incident.incident_id || incident.id} - ${incident.model_name || incident.incidentName || "Manual Review"}`);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  
+  // Initial HTML content for the editor
+  const [body, setBody] = useState(`
+    <p>Dear Team,</p>
+    <p>This is a notification regarding the following incident:</p>
+    <ul>
+      <li><strong>ID:</strong> ${incident.incident_id || incident.id}</li>
+      <li><strong>Platform:</strong> ${incident.platform}</li>
+      <li><strong>Severity:</strong> <span style="color: red;">${incident.severity}</span></li>
+    </ul>
+    <p><em>Description:</em> ${incident.description}</p>
+    <br/>
+    <p>Best Regards,<br/><strong>SOC Team</strong></p>
+  `);
 
-  // Auto-populate when incident changes
-  useEffect(() => {
-    if (incident) {
-      // Logic to extract email from source if available, otherwise blank
-      const emailMatch = incident.source.match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i);
-      setTo(emailMatch ? emailMatch[0] : "");
-      
-      setSubject(`Notification: ${incident.incidentId} - ${incident.incidentName || "--"}`);
-      
-      setBody(
-        `Dear User,\n\n` +
-        `This is a notification regarding the incident:\n\n` +
-        `Incident ID: ${incident.incidentId}\n` +
-        `Incident Name: ${incident.incidentName || "--"}\n\n` +
-        `Please take necessary actions.\n\nThank you.`
-      );
-    }
-  }, [incident]);
+  // Quill Toolbar Configuration
+  const modules = {
+    toolbar: [
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['link', 'clean']
+    ],
+  };
 
-  if (!incident) return null;
+  const handleSend = () => {
+    setTimeout(() => {
+    onSend({ to, cc, subject, body });
+    setIsSending(false);
+    }, 1000);
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-[80]" onClick={onClose}>
-      <div 
-        className="bg-white p-6 rounded-lg w-[450px] shadow-2xl animate-in zoom-in duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-[#091E42]">Send Notification Email</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={20} />
-          </button>
+    <>
+      <div className="fixed inset-0 bg-black/20 z-[80]" onClick={onClose} />
+      
+      <div className="fixed bottom-0 right-10 w-[600px] bg-white shadow-2xl rounded-t-xl z-[90] flex flex-col border border-gray-300 animate-in slide-in-from-bottom-10 duration-300">
+        
+        {/* Gmail Header */}
+        <div className="bg-[#f2f6fc] px-4 py-2 rounded-t-xl flex items-center justify-between border-b">
+          <span className="text-sm font-medium text-[#041e49]">New Message</span>
+          <div className="flex items-center gap-2 text-gray-500">
+            <button className="p-1 hover:bg-gray-200 rounded"><Minus size={16} /></button>
+            <button onClick={() => setIsMaximized(!isMaximized)} className="p-1 hover:bg-gray-200 rounded">{isMaximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</button>
+            <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded text-gray-700"><X size={18} /></button>
+          </div>
         </div>
-
-        <div className="space-y-4">
-          {/* To Field */}
-          <div>
-            <label className="block text-sm font-bold text-[#44546F] mb-1">To</label>
+        
+        {/* Recipients Area */}
+        <div className="px-4 text-sm">
+          <div className="flex items-center border-b py-2 relative">
+            <span className="text-gray-500 w-12">To</span>
             <input 
-              type="text"
+              className="flex-1 outline-none" 
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="w-full border border-[#DFE1E6] p-2 rounded-md text-sm outline-none focus:ring-1 focus:ring-[#8777D9]"
-              placeholder="recipient@example.com"
+              placeholder="recipients@example.com"
             />
+            {!showCC && (
+              <button onClick={() => setShowCC(true)} className="text-gray-400 hover:text-blue-600 text-xs px-2">Cc</button>
+            )}
           </div>
 
-          {/* Subject Field */}
-          <div>
-            <label className="block text-sm font-bold text-[#44546F] mb-1">Subject</label>
+          {showCC && (
+            <div className="flex items-center border-b py-2 animate-in fade-in">
+              <span className="text-gray-500 w-12">Cc</span>
+              <input 
+                className="flex-1 outline-none" 
+                value={cc}
+                onChange={(e) => setCc(e.target.value)}
+              />
+            </div>
+          )}
+
+          <div className="flex items-center border-b py-2">
             <input 
-              type="text"
+              className="w-full outline-none font-medium placeholder-gray-400" 
+              placeholder="Subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full border border-[#DFE1E6] p-2 rounded-md text-sm outline-none focus:ring-1 focus:ring-[#8777D9]"
-            />
-          </div>
-
-          {/* Body Field */}
-          <div>
-            <label className="block text-sm font-bold text-[#44546F] mb-1">Body</label>
-            <textarea 
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              className="w-full border border-[#DFE1E6] p-2 rounded-md text-sm outline-none focus:ring-1 focus:ring-[#8777D9] min-h-[150px] resize-y"
             />
           </div>
         </div>
 
-        {/* Footer Action */}
-        <div className="mt-6 flex justify-end">
-          <button 
-            onClick={() => onSend({ to, subject, body })}
-            className="bg-[#8777D9] hover:bg-[#735DD1] text-white px-6 py-2 rounded-md text-sm font-bold transition-colors shadow-sm"
-          >
-            Send
-          </button>
+        {/* RICH TEXT EDITOR AREA */}
+        <div className="flex-1 overflow-y-auto min-h-[300px] quill-container">
+          <ReactQuill 
+            theme="snow" 
+            value={body} 
+            onChange={setBody} 
+            modules={modules}
+            className="h-full border-none"
+          />
+        </div>
+
+        {/* Gmail Footer */}
+        <div className="px-4 py-3 border-t flex items-center justify-between bg-white">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center bg-[#0b57d0] hover:bg-[#0842a0] rounded-full overflow-hidden transition-colors shadow-md">
+              <button 
+                onClick={handleSend}
+                disabled={isSending}
+                className={`pl-6 pr-4 py-2 text-white font-medium text-sm border-r border-white/20 flex items-center gap-2 transition-all ${
+                  isSending ? "bg-[#0842a0] cursor-not-allowed" : "bg-[#0b57d0] hover:bg-[#0842a0]"
+                }`}
+              >
+                {isSending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send"
+                )}
+              </button>
+              <button className="px-2 py-2 text-white hover:bg-white/10 transition-colors">
+                <ChevronDown size={16} />
+              </button>
+            </div>
+            <button className="p-2 hover:bg-gray-100 rounded text-gray-600">
+              <Paperclip size={18} />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1 text-gray-500">
+             <button className="p-2 hover:bg-gray-100 rounded"><MoreVertical size={18} /></button>
+             <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded hover:text-red-500"><Trash2 size={18} /></button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Custom CSS to hide the default Quill border for a Gmail look */}
+      <style>{`
+        .quill-container .ql-toolbar.ql-snow {
+          border: none;
+          border-bottom: 1px solid #f1f3f4;
+          background: #fff;
+        }
+        .quill-container .ql-container.ql-snow {
+          border: none;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-size: 14px;
+        }
+      `}</style>
+    </>
   );
 };

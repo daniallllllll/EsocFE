@@ -38,16 +38,17 @@ const severityClass: Record<string, string> = {
 
 const statusClass: Record<string, string> = {
   // Standard (Trend Micro / QRadar)
-  Open: "bg-purple-100 text-purple-700",
-  Closed: "bg-gray-200 text-gray-600",
+  Open: "bg-purple-100 text-purple-700 font-bold",
+  Closed: "bg-gray-200 text-gray-600 font-bold",
+  
   // Cortex Specific
   New: "bg-blue-100 text-blue-700",
-  "Under Investigation": "bg-yellow-100 text-yellow-700",
-  "Resolved True Positive": "bg-green-100 text-green-700",
-  "Resolved False Positive": "bg-red-100 text-red-700",
-  "Resolved Duplicate": "bg-slate-100 text-slate-600",
-  "Resolved Known Issue": "bg-orange-100 text-orange-700",
-  "Resolved Other": "bg-gray-100 text-gray-600",
+  "Under Investigation": "bg-indigo-100 text-indigo-700 font-bold",
+  "Resolved True Positive": "bg-green-100 text-green-700 font-bold",
+  "Resolved False Positive": "bg-red-100 text-red-700 font-bold",
+  "Resolved Duplicate": "bg-slate-100 text-slate-600 font-bold",
+  "Resolved Known Issue": "bg-orange-100 text-orange-700 font-bold",
+  "Resolved Other": "bg-gray-100 text-gray-500 font-bold",
 };
 
 export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilter }) => {
@@ -75,12 +76,22 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
 
   const getOptions = (key: keyof EventItem) => {
-    if (key === "severity") return ["Critical", "High", "Medium", "Low"];
-    if (key === "status") return Object.keys(statusClass);
-    return Array.from(new Set(localData.map((item) => String(item[key] ?? ""))))
-      .filter(Boolean)
-      .sort();
-  };
+  if (key === "severity") return ["Critical", "High", "Medium", "Low"];
+  if (key === "status") return Object.keys(statusClass);
+  
+  // Custom formatting for the Time/Timestamp column
+  if (key === "timestamp") {
+    return Array.from(new Set(localData.map((item) => {
+      const date = new Date(String(item[key]));
+      // Returns a clean format like "6/15/2025, 4:45:12 PM"
+      return date.toLocaleString(); 
+    }))).filter(Boolean).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  }
+
+  return Array.from(new Set(localData.map((item) => String(item[key] ?? ""))))
+    .filter(Boolean)
+    .sort();
+};
 
   /* ===================== UPDATED HANDLERS ===================== */
   const handleBulkAction = (action: string) => {
