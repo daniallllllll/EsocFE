@@ -1,6 +1,37 @@
 import React, { useState } from "react";
-import { Check, X, ChevronDown } from "lucide-react";
+import { Check, X, ChevronDown, AlertTriangle } from "lucide-react";
 import { EventItem } from "../../../types/event";
+
+/* --- Reusable Confirmation Component --- */
+const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }: any) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center animate-in fade-in duration-200">
+      <div className="bg-white rounded-xl shadow-2xl w-[400px] overflow-hidden animate-in zoom-in duration-200">
+        <div className="p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+              <AlertTriangle size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+          </div>
+          <p className="text-sm text-gray-500 leading-relaxed">{message}</p>
+        </div>
+        <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+          <button onClick={onCancel} className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg">
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm} 
+            className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+          >
+            Confirm Update
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface EditProps {
   incident: EventItem | null;
@@ -12,6 +43,7 @@ interface EditProps {
 export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSave }) => {
   const [status, setStatus] = useState(incident?.status || "");
   const [description, setDescription] = useState(incident?.description || "");
+  const [showConfirm, setShowConfirm] = useState(false);
 
   if (!incident) return null;
 
@@ -33,6 +65,17 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
   // 2. Determine options based on current platform
   const currentPlatform = incident.platform?.toLowerCase() || "";
   const statusOptions = platformStatuses[currentPlatform] || ["Open", "Closed"];
+
+  // Step 1: Trigger the warning
+  const handleSaveTrigger = () => {
+    setShowConfirm(true);
+  };
+
+  // Step 2: Finalize the save after confirmation
+  const handleFinalSave = () => {
+    onSave(incident.incidentId, { status, description });
+    setShowConfirm(false);
+  };
 
   return (
     /* FIXED: Added onClick={onClose} to the overlay to allow closing when clicking outside */
@@ -87,13 +130,22 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
         {/* Footer Actions */}
         <div className="mt-8 flex justify-end">
           <button 
-            onClick={() => onSave(incident.incidentId, { status, description })} 
+            onClick={handleSaveTrigger}
             className="bg-[#1D9C5D] hover:bg-[#16804B] text-white px-5 py-2 rounded-md text-sm font-bold flex items-center gap-2 shadow-sm transition-colors"
           >
             <Check size={18} /> Save
           </button>
         </div>
       </div>
+
+      {/* Warning Alert */}
+      <ConfirmDialog 
+        isOpen={showConfirm}
+        title="Update Incident Status?"
+        message={`Are you sure you want to update this incident to "${status}"? This will be reflected across the dashboard immediately.`}
+        onConfirm={handleFinalSave}
+        onCancel={() => setShowConfirm(false)}
+      />
     </div>
   );
 };

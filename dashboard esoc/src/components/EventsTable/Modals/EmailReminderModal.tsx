@@ -1,7 +1,31 @@
 import React, { useState } from "react";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; // Import the styles
-import { X, Minus, Maximize2, Minimize2 , Send, ChevronDown, MoreVertical, Trash2, Paperclip } from "lucide-react";
+import { X, Minus, Maximize2, Minimize2 , Send, ChevronDown, MoreVertical, Trash2, Paperclip, AlertTriangle } from "lucide-react";
+
+/* --- Reusable Confirmation Component --- */
+const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }: any) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center animate-in fade-in duration-200">
+      <div className="bg-white rounded-xl shadow-2xl w-[400px] overflow-hidden animate-in zoom-in duration-200">
+        <div className="p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 rounded-full bg-orange-100 text-orange-600">
+              <AlertTriangle size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+          </div>
+          <p className="text-sm text-gray-500">{message}</p>
+        </div>
+        <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+          <button onClick={onCancel} className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+          <button onClick={onConfirm} className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg">Confirm Action</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface EmailProps {
   incident: any;
@@ -16,6 +40,7 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
   const [subject, setSubject] = useState(`Incident Alert: ${incident.incident_id || incident.id} - ${incident.model_name || incident.incidentName || "Manual Review"}`);
   const [isMaximized, setIsMaximized] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   
   // Initial HTML content for the editor
   const [body, setBody] = useState(`
@@ -41,17 +66,28 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
   };
 
   const handleSend = () => {
+    setShowConfirm(true);
+  };
+
+  const handleFinalSend = () => {
+    setShowConfirm(false);
+    setIsSending(true);
     setTimeout(() => {
-    onSend({ to, cc, subject, body });
-    setIsSending(false);
+      onSend({ to, cc, subject, body });
+      setIsSending(false);
     }, 1000);
+    
   };
 
   return (
     <>
       <div className="fixed inset-0 bg-black/20 z-[80]" onClick={onClose} />
       
-      <div className="fixed bottom-0 right-10 w-[600px] bg-white shadow-2xl rounded-t-xl z-[90] flex flex-col border border-gray-300 animate-in slide-in-from-bottom-10 duration-300">
+      <div className={`fixed bg-white shadow-2xl z-[90] flex flex-col border border-gray-300 transition-all duration-300 animate-in slide-in-from-bottom-10 ${
+        isMaximized 
+          ? "inset-10 rounded-xl" // Full screen mode
+          : "bottom-0 right-10 w-[600px] h-[550px] rounded-t-xl" // Gmail mode
+      }`}>
         
         {/* Gmail Header */}
         <div className="bg-[#f2f6fc] px-4 py-2 rounded-t-xl flex items-center justify-between border-b">
@@ -145,7 +181,14 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
           </div>
         </div>
       </div>
-
+      {/* 4. CONFIRMATION ALERT MODAL */}
+      <ConfirmDialog 
+        isOpen={showConfirm}
+        title="Confirm Email Action"
+        message="Are you sure you want to send this notification email to the recipients? This action cannot be undone."
+        onConfirm={handleFinalSend}
+        onCancel={() => setShowConfirm(false)}
+      />
       {/* Custom CSS to hide the default Quill border for a Gmail look */}
       <style>{`
         .quill-container .ql-toolbar.ql-snow {
