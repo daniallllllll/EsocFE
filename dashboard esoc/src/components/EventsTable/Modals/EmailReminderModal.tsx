@@ -181,6 +181,7 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
           </div>
         </div>
       </div>
+      
       {/* 4. CONFIRMATION ALERT MODAL */}
       <ConfirmDialog 
         isOpen={showConfirm}
