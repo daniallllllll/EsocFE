@@ -20,12 +20,12 @@ interface EventsTableProps {
 const columns: { key: keyof EventItem; label: string; width: string }[] = [
   { key: "incidentId", label: "Incident ID", width: "w-[140px]" },
   { key: "timestamp", label: "Time", width: "w-[180px]" },
-  { key: "customerName", label: "Customer", width: "w-[160px]" },
+  { key: "customerName", label: "Customer Name", width: "w-[160px]" },
   { key: "platform", label: "Platform", width: "w-[140px]" },
-  { key: "incidentName", label: "Incident", width: "w-[220px]" },
+  { key: "incidentName", label: "Incident Name", width: "w-[220px]" },
+  { key: "description", label: "Description Of Incident", width: "w-[160px]" },
   { key: "severity", label: "Severity", width: "w-[120px]" },
   { key: "status", label: "Status", width: "w-[120px]" },
-  { key: "description", label: "Description", width: "w-[160px]" },
   { key: "source", label: "Source", width: "w-[140px]" },
 ];
 
@@ -304,19 +304,19 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
                     onChange={() => toggleRow(item.incidentId)}
                   />
                 </td>
-                <td className="px-3 py-3 font-medium text-gray-700">{item.incidentId}</td>
-                <td className="px-3 py-3 text-gray-500">{new Date(item.timestamp).toLocaleString()}</td>
-                <td className="px-3 py-3 text-gray-700">{item.customerName}</td>
-                <td className="px-3 py-3 text-gray-700">{item.platform}</td>
-                <td className="px-3 py-3 text-gray-700">{item.incidentName}</td>
+                <td className="px-3 py-3 font-medium text-gray-700 truncate max-w-[140px]" title={String(item.incidentId)}>{item.incidentId}</td>
+                <td className="px-3 py-3 text-gray-500 truncate max-w-[180px]" title={new Date(item.timestamp).toLocaleString()}>{new Date(item.timestamp).toLocaleString()}</td>
+                <td className="px-3 py-3 text-gray-700 truncate max-w-[160px]" title={item.customerName}>{item.customerName}</td>
+                <td className="px-3 py-3 text-gray-700 truncate max-w-[140px]" title={item.platform}>{item.platform}</td>
+                <td className="px-3 py-3 text-gray-700 font-semibold truncate max-w-[220px]" title={item.incidentName}>{item.incidentName}</td>
+                <td className="px-3 py-3 text-gray-500 text-xs max-w-[200px] truncate cursor-help" title={item.description}>{item.description}</td>
                 <td className="px-3 py-3">
                   <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${severityClass[item.severity]}`}>{item.severity}</span>
                 </td>
                 <td className="px-3 py-3">
                   <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${statusClass[item.status] || "bg-gray-100 text-gray-600"}`}>{item.status}</span>
                 </td>
-                <td className="px-3 py-3 truncate max-w-[160px] text-gray-500">{item.description}</td>
-                <td className="px-3 py-3 text-gray-400">{item.source}</td>
+                <td className="px-3 py-3 text-gray-400 truncate max-w-[140px]" title={item.source}>{item.source}</td>
                 <td className="px-3 py-3">
                   <div className="flex gap-3">
                     <button onClick={() => setViewIncident(item)} className="p-1 hover:bg-blue-100 rounded-md transition-colors text-blue-600" title="View Details">
@@ -395,6 +395,15 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
           }}
         />
       )}
+
+      {/* Place the Bulk Confirmation here to solve the "Cannot find name" error */}
+      <ConfirmDialog 
+        isOpen={showBulkConfirm}
+        title="Confirm Bulk Action"
+        message={`You are about to update ${selectedIds.length} incidents. Do you want to proceed?`}
+        onConfirm={() => handleBulkAction(bulkAction)}
+        onCancel={() => setShowBulkConfirm(false)}
+      />
 
       {/* Toast Notification */}
       {reminderMessage && (
