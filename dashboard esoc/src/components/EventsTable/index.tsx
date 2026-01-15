@@ -76,69 +76,50 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
 
+  /* --- DYNAMIC FILTER OPTIONS (Non-Hardcoded) --- */
   const getOptions = (key: keyof EventItem) => {
-  if (key === "severity") return ["Critical", "High", "Medium", "Low"];
-  if (key === "status") return Object.keys(statusClass);
-  
-  // Custom formatting for the Time/Timestamp column
-  if (key === "timestamp") {
-    return Array.from(new Set(localData.map((item) => {
-      const date = new Date(String(item[key]));
-      // Returns a clean format like "6/15/2025, 4:45:12 PM"
-      return date.toLocaleString(); 
-    }))).filter(Boolean).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-  }
+    // This dynamically pulls unique values from your API data
+    const allValues = localData.map((item) => {
+      const val = item[key];
+      if (key === "timestamp") return new Date(String(val)).toLocaleString();
+      return val ? String(val) : "";
+    });
 
-  return Array.from(new Set(localData.map((item) => String(item[key] ?? ""))))
-    .filter(Boolean)
-    .sort();
-};
+    return Array.from(new Set(allValues))
+      .filter(Boolean)
+      .sort();
+  };
 
   /* ===================== UPDATED HANDLERS ===================== */
   const handleBulkAction = (action: string) => {
     setLocalData((prev) =>
       prev.map((item) => {
         if (!selectedIds.includes(item.incidentId)) return item;
-
         const platform = item.platform?.toLowerCase();
         let newStatus = item.status;
 
-        // Platform-specific status assignment logic
-        if (action === "open_new") {
-          newStatus = (platform === "cortex") ? "New" : "Open";
-        } else if (action === "close_resolve") {
-          newStatus = (platform === "cortex") ? "Resolved True Positive" : "Closed";
-        } else if (action === "investigation") {
-          newStatus = (platform === "cortex") ? "Under Investigation" : "Open";
-        } else {
-          // Direct mapping for Cortex specific resolutions
+        if (action === "open_new") newStatus = platform === "cortex" ? "New" : "Open";
+        else if (action === "close_resolve") newStatus = platform === "cortex" ? "Resolved True Positive" : "Closed";
+        else if (action === "investigation") newStatus = platform === "cortex" ? "Under Investigation" : "Open";
+        else {
           const directMap: Record<string, string> = {
-            "res_false": "Resolved False Positive",
-            "res_dup": "Resolved Duplicate",
-            "res_known": "Resolved Known Issue",
-            "res_other": "Resolved Other",
-            "res_true": "Resolved True Positive"
+            "res_false": "Resolved False Positive", "res_dup": "Resolved Duplicate",
+            "res_known": "Resolved Known Issue", "res_other": "Resolved Other", "res_true": "Resolved True Positive"
           };
-          if (directMap[action]) {
-             newStatus = (platform === "cortex") ? directMap[action] : "Closed";
-          }
+          if (directMap[action]) newStatus = platform === "cortex" ? directMap[action] : "Closed";
         }
-
         return { ...item, status: newStatus };
       })
     );
-
-    setReminderMessage(`Applied "${action.replace(/_/g, " ")}" based on platform rules.`);
+    setReminderMessage(`Bulk update applied.`);
     setBulkAction("");
     setSelectedIds([]);
+    setShowBulkConfirm(false);
   };
 
   const exportToCSV = (dataToExport: EventItem[]) => {
     const headers = columns.map(col => col.label).join(",");
-    const rows = dataToExport.map(e => 
-      columns.map(col => `"${String(e[col.key] ?? "").replace(/"/g, '""')}"`).join(",")
-    ).join("\n");
-    
+    const rows = dataToExport.map(e => columns.map(col => `"${String(e[col.key] ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
     const csv = `${headers}\n${rows}`;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -148,40 +129,31 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
     link.click();
     URL.revokeObjectURL(url);
   };
+    
 
   /* --- Reusable Confirmation Component --- */
       const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }: any) => {
-        if (!isOpen) return null;
-        return (
-          <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center animate-in fade-in duration-200">
-            <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)] overflow-hidden animate-in zoom-in duration-200">
-              <div className="p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 rounded-full bg-orange-100 text-orange-600">
-                    <AlertTriangle size={24} />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-                </div>
-                <p className="text-sm text-gray-500 leading-relaxed">{message}</p>
+    if (!isOpen) return null;
+    return (
+      <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center animate-in fade-in duration-200">
+        <div className="bg-white rounded-xl shadow-2xl w-[420px] overflow-hidden animate-in zoom-in duration-200">
+          <div className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 rounded-full bg-orange-100 text-orange-600">
+                <AlertTriangle size={24} />
               </div>
-              <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
-                <button 
-                  onClick={onCancel} 
-                  className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={onConfirm} 
-                  className="px-4 py-2 text-sm font-semibold text-white bg-[#0052CC] hover:bg-blue-700 rounded-lg shadow-sm"
-                >
-                  Confirm Action
-                </button>
-              </div>
+              <h3 className="text-lg font-bold text-gray-900">{title}</h3>
             </div>
+            <p className="text-sm text-gray-500 leading-relaxed">{message}</p>
           </div>
-        );
-      };
+          <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+            <button onClick={onCancel} className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+            <button onClick={onConfirm} className="px-4 py-2 text-sm font-semibold text-white bg-[#0052CC] hover:bg-blue-700 rounded-lg shadow-sm">Confirm Action</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)] overflow-visible">
