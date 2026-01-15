@@ -255,11 +255,11 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
       </div>
 
       {/* 2. Table */}
-      <div className="flex-1 overflow-x-auto custom-scrollbar">
+      <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)] overflow-hidden relative">
         <table className="min-w-[1400px] text-sm border-collapse">
-          <thead className="sticky top-0 z-40">
-            <tr className="border-b bg-gray-50/50">
-              <th className="px-2 py-3 w-10">
+          <thead className="sticky top-0 z-40 bg-white shadow-sm">
+            <tr className="bg-white">
+              <th className="px-2 py-3 w-10 bg-white border-b">
                 <input
                   type="checkbox"
                   className="rounded border-gray-300 text-[#0052CC] focus:ring-[#0052CC]"
@@ -268,7 +268,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
                 />
               </th>
               {columns.map((col) => (
-                <th key={col.key} className={`px-3 py-2 align-top ${col.width}`}>
+                <th key={col.key} className={`px-3 py-2 align-top bg-white border-b ${col.width}`}>
                   <div
                     className="flex items-center justify-between font-semibold mb-2 cursor-pointer select-none text-gray-600"
                     onClick={() => {
@@ -290,12 +290,12 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
                   />
                 </th>
               ))}
-              <th className="px-3 py-2 text-gray-600">Actions</th>
+              <th className="px-3 py-2 text-gray-600 bg-white border-b">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-white">
             {filtered.map((item) => (
-              <tr key={item.incidentId} className="border-b hover:bg-blue-50/30 transition-colors group">
+              <tr key={item.incidentId} className={`border-b bg-white hover:bg-blue-50/30 transition-colors group ${selectedIds.includes(item.incidentId) ? "bg-blue-50/50" : ""}`}>
                 <td className="px-2 py-3 text-center">
                   <input
                     type="checkbox"
@@ -382,9 +382,14 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
           setLocalData(prev => prev.map(item => {
             if (item.incidentId === id) {
 
+              // 1. Get user from local storage
+              const authUserJson = localStorage.getItem("auth_user");
+              const authUser = authUserJson ? JSON.parse(authUserJson) : { email: "Unknown Analyst" };
+              
+              // 2. Format the signature
+              const analystName = authUser.email;
               const now = new Date().toLocaleString();
-
-              const newRemarkEntry = `\n\n[REMARK - ${now}]: ${updates.remarks}`;
+              const newRemarkEntry = `\n\n[REMARK - ${now} | Analyst: ${analystName}]:\n${updates.remarks}`;
               
               return { 
                 ...item, 
