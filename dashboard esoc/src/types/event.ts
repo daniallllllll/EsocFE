@@ -1,6 +1,6 @@
 // src/types/event.ts
 export interface EventItem {
-  incidentId: string;
+  incident_id: string;
   timestamp: string;
   platform: string;
   severity: string;

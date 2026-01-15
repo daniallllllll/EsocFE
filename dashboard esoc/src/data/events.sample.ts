@@ -1,5 +1,5 @@
 export interface EventItem {
-  incidentId: string;
+  incident_id: string;
   timestamp: string;
   platform: string;
   incidentName: string;
@@ -12,7 +12,7 @@ export interface EventItem {
 
 export const sampleEvents: EventItem[] = [
   {
-    incidentId: "WB-21683-20250909-00010",
+    incident_id: "WB-21683-20250909-00010",
     timestamp: "2025-09-09T03:14:10Z",
     platform: "Trend Micro",
     severity: "Critical",
@@ -23,7 +23,7 @@ export const sampleEvents: EventItem[] = [
     customerName: "Acme Corp",
   },
   {
-    incidentId: "866602",
+    incident_id: "866602",
     timestamp: "2025-07-29T11:31:24Z",
     platform: "QRadar",
     severity: "High",
@@ -34,7 +34,7 @@ export const sampleEvents: EventItem[] = [
     customerName: "Beta Inc",
   },
   {
-    incidentId: "119",
+    incident_id: "119",
     timestamp: "2025-11-30T22:08:53Z",
     platform: "Cortex",
     severity: "Low",
@@ -46,7 +46,7 @@ export const sampleEvents: EventItem[] = [
   },
 
   {
-    incidentId: "WB-21541-20251028-00016",
+    incident_id: "WB-21541-20251028-00016",
     timestamp: "2025-10-28T19:06:24Z",
     platform: "Trend Micro",
     severity: "Low",
@@ -58,7 +58,7 @@ export const sampleEvents: EventItem[] = [
   },
 
   {
-    incidentId: "WB-21683-20251112-00007",
+    incident_id: "WB-21683-20251112-00007",
     timestamp: "2025-11-12T12:26:23Z",
     platform: "Trend Micro",
     severity: "High",
@@ -70,7 +70,7 @@ export const sampleEvents: EventItem[] = [
   },
 
   {
-    incidentId: "131",
+    incident_id: "131",
     timestamp: "2025-06-15T08:45:12Z",
     platform: "Cortex",
     severity: "High",

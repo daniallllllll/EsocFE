@@ -37,7 +37,7 @@ export const useEventTable = (initialEvents: EventItem[], cardFilter?: any) => {
   };
 
   const toggleAll = () => {
-    setSelectedIds(selectedIds.length === filtered.length ? [] : filtered.map(e => e.incidentId));
+    setSelectedIds(selectedIds.length === filtered.length ? [] : filtered.map(e => e.incident_id));
   };
 
   return {

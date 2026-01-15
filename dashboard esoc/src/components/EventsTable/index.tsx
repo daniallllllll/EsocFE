@@ -18,7 +18,7 @@ interface EventsTableProps {
 }
 
 const columns: { key: keyof EventItem; label: string; width: string }[] = [
-  { key: "incidentId", label: "Incident ID", width: "w-[140px]" },
+  { key: "incident_id", label: "Incident ID", width: "w-[140px]" },
   { key: "timestamp", label: "Time", width: "w-[180px]" },
   { key: "customerName", label: "Customer Name", width: "w-[160px]" },
   { key: "platform", label: "Platform", width: "w-[140px]" },
@@ -94,7 +94,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
   const handleBulkAction = (action: string) => {
     setLocalData((prev) =>
       prev.map((item) => {
-        if (!selectedIds.includes(item.incidentId)) return item;
+        if (!selectedIds.includes(item.incident_id)) return item;
         const platform = item.platform?.toLowerCase();
         let newStatus = item.status;
 
@@ -206,7 +206,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         )}
 
         <button
-          onClick={() => exportToCSV(filtered.filter(e => selectedIds.includes(e.incidentId)))}
+          onClick={() => exportToCSV(filtered.filter(e => selectedIds.includes(e.incident_id)))}
           disabled={selectedIds.length === 0}
           className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition"
         >
@@ -267,16 +267,16 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
           </thead>
           <tbody className="bg-white">
             {filtered.map((item) => (
-              <tr key={item.incidentId} className={`border-b bg-white hover:bg-blue-50/30 transition-colors group ${selectedIds.includes(item.incidentId) ? "bg-blue-50/50" : ""}`}>
+              <tr key={item.incident_id} className={`border-b bg-white hover:bg-blue-50/30 transition-colors group ${selectedIds.includes(item.incident_id) ? "bg-blue-50/50" : ""}`}>
                 <td className="px-2 py-3 text-center">
                   <input
                     type="checkbox"
                     className="rounded border-gray-300 text-[#0052CC] focus:ring-[#0052CC]"
-                    checked={selectedIds.includes(item.incidentId)}
-                    onChange={() => toggleRow(item.incidentId)}
+                    checked={selectedIds.includes(item.incident_id)}
+                    onChange={() => toggleRow(item.incident_id)}
                   />
                 </td>
-                <td className="px-3 py-3 font-medium text-gray-700 truncate max-w-[140px]" title={String(item.incidentId)}>{item.incidentId}</td>
+                <td className="px-3 py-3 font-medium text-gray-700 truncate max-w-[140px]" title={String(item.incident_id)}>{item.incident_id}</td>
                 <td className="px-3 py-3 text-gray-500 truncate max-w-[180px]" title={new Date(item.timestamp).toLocaleString()}>{new Date(item.timestamp).toLocaleString()}</td>
                 <td className="px-3 py-3 text-gray-700 truncate max-w-[160px]" title={item.customerName}>{item.customerName}</td>
                 <td className="px-3 py-3 text-gray-700 truncate max-w-[140px]" title={item.platform}>{item.platform}</td>
@@ -352,7 +352,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         onClose={() => setEditIncident(null)}
         onSave={(id, updates) => {
           setLocalData(prev => prev.map(item => {
-            if (item.incidentId === id) {
+            if (item.incident_id === id) {
 
               // 1. Get user from local storage
               const authUserJson = localStorage.getItem("auth_user");

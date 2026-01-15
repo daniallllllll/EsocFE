@@ -26,7 +26,7 @@ export const ViewIncidentModal: React.FC<any> = ({ incident, onClose, onEdit, on
             <h2 className="text-xl font-bold text-gray-900 leading-none">Incident Details</h2>
             <div className="flex flex-wrap gap-2 mt-2">
               <span className="text-[10px] font-mono text-gray-500 bg-gray-200 px-2 py-0.5 rounded">
-                ID: {incident.incident_id || incident.id || incident.incidentId}
+                ID: {incident.incident_id || incident.id || incident.incident_id}
               </span>
               {(incident.predicted_score || incident.magnitude || incident.score) && (
                 <span className="bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded font-bold">
