@@ -154,7 +154,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         if (!isOpen) return null;
         return (
           <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center animate-in fade-in duration-200">
-            <div className="bg-white rounded-xl shadow-2xl w-[420px] overflow-hidden animate-in zoom-in duration-200">
+            <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)] overflow-hidden animate-in zoom-in duration-200">
               <div className="p-6">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 rounded-full bg-orange-100 text-orange-600">
@@ -255,7 +255,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
       </div>
 
       {/* 2. Table */}
-      <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)] overflow-hidden relative">
+      <div className="flex-1 overflow-auto custom-scrollbar bg-white relative">
         <table className="min-w-[1400px] text-sm border-collapse">
           <thead className="sticky top-0 z-40 bg-white shadow-sm">
             <tr className="bg-white">
