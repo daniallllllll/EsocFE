@@ -19,8 +19,13 @@ export const useEventTable = (initialEvents: EventItem[], cardFilter?: { key: st
       .filter((e) => {
         // 1. Apply Card Filter (from Pie Charts)
         // Ensure comparison is case-insensitive for robustness
-        if (!cardFilter) return true;
-        return String(e[cardFilter.key] ?? "").toLowerCase() === cardFilter.value.toLowerCase();
+        if (!cardFilter || !cardFilter.key) return true;
+
+        const rowValue = String(e[cardFilter.key as keyof EventItem] ?? "");
+        const filterValue = String(cardFilter.value ?? "");
+
+        // Use case-insensitive comparison to be safe
+        return rowValue.toLowerCase() === filterValue.toLowerCase();
       })
       .filter((e) => {
         // 2. Apply Global Search

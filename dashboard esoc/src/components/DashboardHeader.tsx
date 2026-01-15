@@ -108,10 +108,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
                   nameKey="name" 
                   innerRadius={40} 
                   outerRadius={55} 
-                  paddingAngle={4} 
-                  stroke="none" 
                   onClick={(data) => onFilterChange("severity", data.name)}
-                  className="cursor-pointer outline-none"
+                  className="cursor-pointer"
                 >
                   {severityData.map((d, i) => (
                     <Cell key={i} fill={d.color} className="hover:opacity-80 transition-opacity" />
@@ -148,8 +146,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
                   nameKey="name" 
                   innerRadius={40} 
                   outerRadius={55} 
-                  paddingAngle={4} 
-                  stroke="none"
                   onClick={(data) => onFilterChange("status", data.name)}
                   className="cursor-pointer outline-none"
                 >
