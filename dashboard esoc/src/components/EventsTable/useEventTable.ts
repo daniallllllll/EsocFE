@@ -15,18 +15,22 @@ export const useEventTable = (initialEvents: EventItem[], cardFilter?: { key: st
   }, [initialEvents]);
 
   const filtered = useMemo(() => {
-    return localData
-      .filter((e) => {
-        // 1. Apply Card Filter (from Pie Charts)
-        // Ensure comparison is case-insensitive for robustness
-        if (!cardFilter || !cardFilter.key) return true;
+      return localData
+        .filter((e) => {
+          // 1. Apply Card Filter (from Pie Charts)
+          if (!cardFilter || !cardFilter.key) return true;
 
-        const rowValue = String(e[cardFilter.key as keyof EventItem] ?? "");
-        const filterValue = String(cardFilter.value ?? "");
+          const rowValue = String(e[cardFilter.key as keyof EventItem] ?? "").toLowerCase().trim();
+          const filterValue = String(cardFilter.value).toLowerCase().trim();
 
-        // Use case-insensitive comparison to be safe
-        return rowValue.toLowerCase() === filterValue.toLowerCase();
-      })
+          // Special check: If your chart normalizes "Resolved True Positive" to "Resolved"
+          // we check if the rowValue contains the filterValue
+          if (cardFilter.key === 'status' && filterValue === 'resolved') {
+            return rowValue.includes('resolved');
+          }
+
+          return rowValue === filterValue;
+        })
       .filter((e) => {
         // 2. Apply Global Search
         if (!search) return true;

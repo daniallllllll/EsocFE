@@ -98,7 +98,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
         {/* Severity Chart */}
         <div className="flex flex-col items-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Incident Severity</p>
+          <p className="text-xs font-bold uppercase text-gray-400 mb-2">Incident Severity</p>
           <div className="h-[130px] w-full">
             <ResponsiveContainer>
               <PieChart>
@@ -108,24 +108,34 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
                   nameKey="name" 
                   innerRadius={40} 
                   outerRadius={55} 
-                  onClick={(data) => onFilterChange("severity", data.name)}
-                  className="cursor-pointer"
+                  paddingAngle={4}
+                  stroke="none"
+                  // Add a safety check: only call if onFilterChange exists
+                  onClick={(data) => {
+                    if (typeof onFilterChange === 'function') {
+                      onFilterChange("severity", data.name);
+                    } else {
+                      console.error("onFilterChange prop is missing in DashboardHeader!");
+                    }
+                  }}
+                  className="cursor-pointer outline-none"
                 >
                   {severityData.map((d, i) => (
                     <Cell key={i} fill={d.color} className="hover:opacity-80 transition-opacity" />
                   ))}
                   <Label value={events.length} position="center" className="text-sm font-bold fill-gray-700" />
                 </Pie>
-                <Tooltip cursor={{ fill: 'transparent' }} />
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>
+          {/* Legend Buttons */}
           <div className="flex gap-4 mt-2">
             {severityData.map((d) => (
               <button 
                 key={d.name} 
                 onClick={() => onFilterChange("severity", d.name)} 
-                className="flex items-center gap-1.5 hover:underline decoration-2 transition-all active:scale-95"
+                className="flex items-center gap-1.5 hover:underline"
               >
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} />
                 <span className="text-[11px] font-bold text-gray-600 uppercase">{d.name}</span>
@@ -136,7 +146,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
 
         {/* Status Chart */}
         <div className="flex flex-col items-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Incident Status</p>
+          <p className="text-xs font-bold uppercase text-gray-400 mb-2">Incident Status</p>
           <div className="h-[130px] w-full">
             <ResponsiveContainer>
               <PieChart>
@@ -146,24 +156,34 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
                   nameKey="name" 
                   innerRadius={40} 
                   outerRadius={55} 
-                  onClick={(data) => onFilterChange("status", data.name)}
-                  className="cursor-pointer outline-none"
-                >
+                  paddingAngle={4}
+                  stroke="none"
+                // Add a safety check: only call if onFilterChange exists
+                    onClick={(data) => {
+                      if (typeof onFilterChange === 'function') {
+                        onFilterChange("status", data.name);
+                      } else {
+                        console.error("onFilterChange prop is missing in DashboardHeader!");
+                      }
+                    }}
+                    className="cursor-pointer outline-none"
+                  >
                   {statusData.map((d, i) => (
                     <Cell key={i} fill={d.color} className="hover:opacity-80 transition-opacity" />
                   ))}
                   <Label value={events.length} position="center" className="text-sm font-bold fill-gray-700" />
                 </Pie>
-                <Tooltip cursor={{ fill: 'transparent' }} />
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>
+          {/* Legend Buttons */}
           <div className="flex gap-4 mt-2">
             {statusData.map((d) => (
               <button 
                 key={d.name} 
                 onClick={() => onFilterChange("status", d.name)} 
-                className="flex items-center gap-1.5 hover:underline decoration-2 transition-all active:scale-95"
+                className="flex items-center gap-1.5 hover:underline"
               >
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} />
                 <span className="text-[11px] font-bold text-gray-600 uppercase">{d.name}</span>
@@ -172,7 +192,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
           </div>
         </div>
       </div>
-
       {confirmLogout && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl border animate-in zoom-in duration-200">
