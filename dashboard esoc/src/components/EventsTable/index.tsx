@@ -355,30 +355,24 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
             if (item.incident_id === id) {
 
               // 1. Get user from local storage
-              const authUserJson = localStorage.getItem("auth_user");
-              const authUser = authUserJson ? JSON.parse(authUserJson) : { email: "Unknown Analyst" };
-              
-              // 2. Format the signature
-              const analystName = authUser.email;
+              const authUser = JSON.parse(localStorage.getItem("auth_user") || '{"email":"Unknown"}');
               const now = new Date().toLocaleString();
-              const newRemarkEntry = `\n\n[REMARK - ${now} | Analyst: ${analystName}]:\n${updates.remarks}`;
+              // Access 'remarks' from updates
+              const signature = `\n\n[REMARK - ${now} | Analyst: ${authUser.email}]:\n${updates.remarks}`;
               
               return { 
                 ...item, 
-                status: updates.status,
-                // Prepend or append the remark to the existing description
-                description: updates.remarks 
-                  ? `${item.description}\n\n[REMARK - ${new Date().toLocaleString()}]: ${updates.remarks}` 
-                  : item.description
+                status: updates.status, 
+                description: updates.remarks ? `${item.description}${signature}` : item.description 
               };
-            }
-            return item;
-          }));
-          setReminderMessage("Incident updated with new remarks.");
-          setEditIncident(null);
-        }}
-      />
-    )}
+                }
+                return item;
+              }));
+              setReminderMessage("Incident updated with new remarks.");
+              setEditIncident(null);
+            }}
+          />
+        )}
       {emailIncident && (
         <EmailReminderModal
           incident={emailIncident}

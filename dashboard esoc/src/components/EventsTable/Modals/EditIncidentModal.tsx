@@ -74,6 +74,7 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
   // Step 2: Finalize the save after confirmation
   const handleFinalSave = () => {
     onSave(incident.incident_id, { status, remarks });
+    setRemarks("");
     setShowConfirm(false);
   };
 
