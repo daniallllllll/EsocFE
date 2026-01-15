@@ -37,12 +37,12 @@ interface EditProps {
   incident: EventItem | null;
   onClose: () => void;
   // Note: Updated to match the save logic in your index.tsx
-  onSave: (id: string, updates: { status: string; description: string }) => void;
+  onSave: (id: string, updates: { status: string; remarks: string }) => void;
 }
 
 export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSave }) => {
   const [status, setStatus] = useState(incident?.status || "");
-  const [description, setDescription] = useState(incident?.description || "");
+  const [remarks, setRemarks] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
 
   if (!incident) return null;
@@ -73,7 +73,7 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
 
   // Step 2: Finalize the save after confirmation
   const handleFinalSave = () => {
-    onSave(incident.incidentId, { status, description });
+    onSave(incident.incidentId, { status, remarks });
     setShowConfirm(false);
   };
 
@@ -90,7 +90,7 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-6 border-b pb-2">
-          <h2 className="text-xl font-bold text-[#091E42]">Edit Incident</h2>
+          <h2 className="text-xl font-bold text-[#091E42]">Update Incident</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X size={20} />
           </button>
@@ -116,14 +116,21 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
             </div>
           </div>
 
-          {/* Description Field */}
+          {/* CHANGED: Description Field became Remarks Field */}
           <div>
-            <label className="block text-sm font-bold text-[#44546F] mb-2">Description</label>
+            <div className="flex items-center gap-2 mb-2">
+               <label className="block text-sm font-bold text-[#44546F]">Investigation Remarks</label>
+               <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">New Note</span>
+            </div>
             <textarea 
-              value={description} 
-              onChange={(e) => setDescription(e.target.value)} 
+              placeholder="Enter your analysis, findings, or internal notes here..."
+              value={remarks} 
+              onChange={(e) => setRemarks(e.target.value)} 
               className="w-full border border-[#DFE1E6] p-3 rounded-md text-sm text-[#172B4D] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all min-h-[120px] resize-y"
             />
+            <p className="text-[10px] text-gray-400 mt-1 italic">
+               The original incident description will be preserved.
+            </p>
           </div>
         </div>
 
@@ -131,6 +138,7 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
         <div className="mt-8 flex justify-end">
           <button 
             onClick={handleSaveTrigger}
+            disabled={!remarks.trim()}
             className="bg-[#1D9C5D] hover:bg-[#16804B] text-white px-5 py-2 rounded-md text-sm font-bold flex items-center gap-2 shadow-sm transition-colors"
           >
             <Check size={18} /> Save
@@ -141,8 +149,8 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
       {/* Warning Alert */}
       <ConfirmDialog 
         isOpen={showConfirm}
-        title="Update Incident Status?"
-        message={`Are you sure you want to update this incident to "${status}"? This will be reflected across the dashboard immediately.`}
+        title="Submit Remarks and Update Incident"
+        message={`Confirming will update the status to "${status}"? and append your remarks to the audit trail.`}
         onConfirm={handleFinalSave}
         onCancel={() => setShowConfirm(false)}
       />

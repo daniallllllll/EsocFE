@@ -114,9 +114,9 @@ export const ViewIncidentModal: React.FC<any> = ({ incident, onClose, onEdit, on
           {/* 5. Description Field */}
           <section>
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Detailed Description</label>
-            <p className="mt-1 text-xs text-gray-700 leading-relaxed bg-gray-50 p-3 rounded border italic">
+            <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded border">
               {incident.description}
-            </p>
+            </div>
           </section>
 
           {/* 6. Timeline & Categories */}

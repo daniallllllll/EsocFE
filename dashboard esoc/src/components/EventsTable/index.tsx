@@ -336,7 +336,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         </table>
       </div>
 
-{/* 3. STICKY BULK ACTION FOOTER */}
+    {/* 3. STICKY BULK ACTION FOOTER */}
       {selectedIds.length > 0 && bulkAction && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl z-[110] flex items-center gap-6 animate-in slide-in-from-bottom-4">
           <div className="flex flex-col">
@@ -375,16 +375,33 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         />
       )}
       {editIncident && (
-        <EditIncidentModal
-          incident={editIncident}
-          onClose={() => setEditIncident(null)}
-          onSave={(id, updates) => {
-            setLocalData(prev => prev.map(item => item.incidentId === id ? { ...item, ...updates } : item));
-            setReminderMessage("Incident updated successfully.");
-            setEditIncident(null);
-          }}
-        />
-      )}
+      <EditIncidentModal
+        incident={editIncident}
+        onClose={() => setEditIncident(null)}
+        onSave={(id, updates) => {
+          setLocalData(prev => prev.map(item => {
+            if (item.incidentId === id) {
+
+              const now = new Date().toLocaleString();
+
+              const newRemarkEntry = `\n\n[REMARK - ${now}]: ${updates.remarks}`;
+              
+              return { 
+                ...item, 
+                status: updates.status,
+                // Prepend or append the remark to the existing description
+                description: updates.remarks 
+                  ? `${item.description}\n\n[REMARK - ${new Date().toLocaleString()}]: ${updates.remarks}` 
+                  : item.description
+              };
+            }
+            return item;
+          }));
+          setReminderMessage("Incident updated with new remarks.");
+          setEditIncident(null);
+        }}
+      />
+    )}
       {emailIncident && (
         <EmailReminderModal
           incident={emailIncident}
