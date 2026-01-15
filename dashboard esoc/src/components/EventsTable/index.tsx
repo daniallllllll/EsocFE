@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useEventTable } from "./useEventTable";
 import { MultiSelectFilter } from "./MultiSelectFilter";
 import { EventItem } from "../../types/event";
-import { ChevronUp, ChevronDown, Layers, Download, Eye, Edit2, Mail, Check, X, ChevronRight } from "lucide-react";
+import { ChevronUp, ChevronDown, Layers, Download, Eye, Edit2, Mail, Check, X, ChevronRight, AlertTriangle } from "lucide-react";
 
 // Import Modals
 import { ViewIncidentModal } from "./Modals/ViewIncidentModal";
@@ -74,6 +74,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
   const [editIncident, setEditIncident] = useState<EventItem | null>(null);
   const [emailIncident, setEmailIncident] = useState<EventItem | null>(null);
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false);
 
   const getOptions = (key: keyof EventItem) => {
   if (key === "severity") return ["Critical", "High", "Medium", "Low"];
@@ -147,6 +148,40 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
     link.click();
     URL.revokeObjectURL(url);
   };
+
+  /* --- Reusable Confirmation Component --- */
+      const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }: any) => {
+        if (!isOpen) return null;
+        return (
+          <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center animate-in fade-in duration-200">
+            <div className="bg-white rounded-xl shadow-2xl w-[420px] overflow-hidden animate-in zoom-in duration-200">
+              <div className="p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 rounded-full bg-orange-100 text-orange-600">
+                    <AlertTriangle size={24} />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+                </div>
+                <p className="text-sm text-gray-500 leading-relaxed">{message}</p>
+              </div>
+              <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+                <button 
+                  onClick={onCancel} 
+                  className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={onConfirm} 
+                  className="px-4 py-2 text-sm font-semibold text-white bg-[#0052CC] hover:bg-blue-700 rounded-lg shadow-sm"
+                >
+                  Confirm Action
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      };
 
   return (
     <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)] overflow-visible">
@@ -222,7 +257,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
       {/* 2. Table */}
       <div className="flex-1 overflow-x-auto custom-scrollbar">
         <table className="min-w-[1400px] text-sm border-collapse">
-          <thead>
+          <thead className="sticky top-0 z-40">
             <tr className="border-b bg-gray-50/50">
               <th className="px-2 py-3 w-10">
                 <input
@@ -300,6 +335,35 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
           </tbody>
         </table>
       </div>
+
+{/* 3. STICKY BULK ACTION FOOTER */}
+      {selectedIds.length > 0 && bulkAction && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl z-[110] flex items-center gap-6 animate-in slide-in-from-bottom-4">
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase text-gray-400 font-bold tracking-widest">Selected Action</span>
+            <span className="text-sm font-semibold">{bulkAction.replace(/_/g, " ").toUpperCase()} ({selectedIds.length} items)</span>
+          </div>
+          <div className="h-8 w-[1px] bg-gray-700" />
+          <div className="flex items-center gap-2">
+            <button onClick={() => setSelectedIds([])} className="px-4 py-1.5 text-sm font-bold text-gray-400 hover:text-white transition-colors">Cancel</button>
+            <button 
+              onClick={() => setShowBulkConfirm(true)} 
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-1.5 rounded-full text-sm font-bold shadow-lg transition-transform active:scale-95"
+            >
+              Apply to Selected
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Confirm Dialog */}
+      <ConfirmDialog 
+        isOpen={showBulkConfirm}
+        title="Apply Bulk Action?"
+        message={`Are you sure you want to change the status of ${selectedIds.length} incidents to "${bulkAction.replace(/_/g, " ").toUpperCase()}"?`}
+        onConfirm={() => handleBulkAction(bulkAction)}
+        onCancel={() => setShowBulkConfirm(false)}
+      />
 
       {/* 3. Modals */}
       {viewIncident && (
