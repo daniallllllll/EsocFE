@@ -124,13 +124,13 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
                <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">New Note</span>
             </div>
             <textarea 
-              placeholder="Enter your analysis, findings, or internal notes here..."
+              placeholder="Enter your analysis, findings, or internal notes here... (Required)"
               value={remarks} 
               onChange={(e) => setRemarks(e.target.value)} 
               className="w-full border border-[#DFE1E6] p-3 rounded-md text-sm text-[#172B4D] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all min-h-[120px] resize-y"
             />
             <p className="text-[10px] text-gray-400 mt-1 italic">
-               The original incident description will be preserved.
+               Note: Your remarks will be timestamped and signed automatically.
             </p>
           </div>
         </div>

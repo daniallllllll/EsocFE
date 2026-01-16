@@ -13,7 +13,7 @@ const Index = () => {
 
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Compact charts */}
-          <DashboardHeader events={sampleEvents} />
+          {/*<DashboardHeader events={sampleEvents} />*/}
 
           {/* Table takes MOST of screen */}
           <main className="flex-1 p-1 bg-muted/20">
