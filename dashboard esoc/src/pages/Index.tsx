@@ -25,7 +25,6 @@ const Index = () => {
     <SidebarProvider>
       <div className="flex h-screen overflow-hidden">
         <DashboardSidebar />
-
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* 3. FIX: Pass the required onFilterChange prop to resolve the error */}
           <DashboardHeader 
@@ -33,7 +32,7 @@ const Index = () => {
             onFilterChange={handleChartClick} 
           />
 
-          <main className="flex-1 p-4 bg-muted/20 overflow-hidden flex flex-col">
+          <main className="flex-1 p-4 bg-muted/20 overflow-hidden flex flex-col w-full">
             
             {/* 4. OPTIONAL: Visual filter indicator for better UX */}
             {activeFilter && (
@@ -53,7 +52,7 @@ const Index = () => {
               </div>
             )}
 
-            <Card className="flex-1 min-h-0">
+            <Card className="w-fullflex-1 min-h-0">
               <CardContent className="p-2 h-full overflow-hidden">
                 {/* 5. FIX: Pass activeFilter down as cardFilter to the Table */}
                 <EventsTable 

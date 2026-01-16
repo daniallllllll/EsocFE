@@ -129,8 +129,16 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
     link.click();
     URL.revokeObjectURL(url);
   };
-    
 
+  const handleResetAll = () => {
+    setColumnFilters({}); // Clears dropdowns
+    if (cardFilter) {
+      // This triggers the parent's setActiveFilter(null) if you pass 
+      // a reset function prop, or simply clear local table state.
+      // For now, we clear the table's internal dropdowns.
+    }
+  };
+    
   /* --- Reusable Confirmation Component --- */
       const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }: any) => {
     if (!isOpen) return null;
@@ -213,6 +221,17 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
           <Download className="h-4 w-4" />
           Export ({selectedIds.length})
         </button>
+
+        {/* NEW: Reset Button */}
+        {(Object.keys(columnFilters).length > 0 || cardFilter) && (
+        <button
+          onClick={handleResetAll}
+          className="flex items-center gap-2 bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors"
+        >
+          <X size={16} />
+          Reset All Filters
+        </button>
+        )}
 
         {selectedIds.length > 0 && (
           <div className="flex items-center gap-2 ml-auto">

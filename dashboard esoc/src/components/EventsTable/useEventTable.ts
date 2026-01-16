@@ -15,22 +15,16 @@ export const useEventTable = (initialEvents: EventItem[], cardFilter?: { key: st
   }, [initialEvents]);
 
   const filtered = useMemo(() => {
-      return localData
-        .filter((e) => {
-          // 1. Apply Card Filter (from Pie Charts)
-          if (!cardFilter || !cardFilter.key) return true;
+    return localData
+      .filter((e) => {
+        // 1. Apply Card Filter (from Donut Charts)
+        if (!cardFilter || !cardFilter.key) return true;
 
-          const rowValue = String(e[cardFilter.key as keyof EventItem] ?? "").toLowerCase().trim();
-          const filterValue = String(cardFilter.value).toLowerCase().trim();
+        const rowValue = String(e[cardFilter.key as keyof EventItem] ?? "").toLowerCase().trim();
+        const filterValue = String(cardFilter.value ?? "").toLowerCase().trim();
 
-          // Special check: If your chart normalizes "Resolved True Positive" to "Resolved"
-          // we check if the rowValue contains the filterValue
-          if (cardFilter.key === 'status' && filterValue === 'resolved') {
-            return rowValue.includes('resolved');
-          }
-
-          return rowValue === filterValue;
-        })
+        return rowValue === filterValue;
+      })
       .filter((e) => {
         // 2. Apply Global Search
         if (!search) return true;
@@ -38,14 +32,22 @@ export const useEventTable = (initialEvents: EventItem[], cardFilter?: { key: st
         return (
           e.incidentName.toLowerCase().includes(q) || 
           e.description.toLowerCase().includes(q) ||
-          e.incident_id.toLowerCase().includes(q) // Included ID in search
+          e.incident_id.toLowerCase().includes(q)
         );
       })
       .filter((e) => {
         // 3. Apply Multi-select Column Filters
         return Object.entries(columnFilters).every(([key, values]) => {
           if (!values || values.length === 0) return true;
-          return values.includes(String(e[key as keyof EventItem] ?? ""));
+
+          let rowValue = String(e[key as keyof EventItem] ?? "");
+
+          // FIX: If filtering by Time, format the row data to match the dropdown string
+          if (key === "timestamp") {
+            rowValue = new Date(rowValue).toLocaleString();
+          }
+
+          return values.includes(rowValue);
         });
       })
       .sort((a, b) => {
@@ -65,7 +67,6 @@ export const useEventTable = (initialEvents: EventItem[], cardFilter?: { key: st
   };
 
   const toggleAll = () => {
-    // FIXED: Now uses 'incident_id' to match your staging environment
     setSelectedIds(selectedIds.length === filtered.length ? [] : filtered.map(e => e.incident_id));
   };
 

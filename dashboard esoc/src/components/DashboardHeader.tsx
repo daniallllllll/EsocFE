@@ -95,7 +95,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Severity Chart */}
         <div className="flex flex-col items-center">
           <p className="text-xs font-bold uppercase text-gray-400 mb-2">Incident Severity</p>
