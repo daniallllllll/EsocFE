@@ -23,7 +23,7 @@ const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }: any) => 
           </button>
           <button 
             onClick={onConfirm} 
-            className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+            className="px-4 py-2 text-sm font-semibold text-white bg-[#0052CC] hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
           >
             Confirm Update
           </button>
@@ -36,131 +36,95 @@ const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }: any) => 
 interface EditProps {
   incident: EventItem | null;
   onClose: () => void;
-  // Updated to include actionStatus in the update object
   onSave: (id: string, updates: { status: string; actionStatus: string; remarks: string }) => void;
 }
 
 export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSave }) => {
-  // 1. Separate States for both status types
-  const [status, setStatus] = useState(incident?.status || "");
+  // Action Status is the primary lifecycle driver that we update
   const [actionStatus, setActionStatus] = useState(incident?.actionStatus || "New");
   const [remarks, setRemarks] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
 
   if (!incident) return null;
 
-  // 2. Incident Status Options (Technical Findings)
-  const platformStatuses: Record<string, string[]> = {
-    cortex: [
-      "New", 
-      "Resolved Duplicate", 
-      "Resolved False Positive", 
-      "Resolved Other", 
-      "Resolved True Positive", 
-      "Under Investigation", 
-      "Resolved Known Issue"
-    ],
-    "trend micro": ["Open", "Closed"],
-    qradar: ["Open", "Closed"]
-  };
-
-  // 3. Action Status Options (Lifecycle)
+  // Unified Lifecycle Options
   const actionStatusOptions = ["New", "In Progress", "Resolved", "Closed"];
-
-  const currentPlatform = incident.platform?.toLowerCase() || "";
-  const incidentStatusOptions = platformStatuses[currentPlatform] || ["Open", "Closed"];
 
   const handleSaveTrigger = () => {
     setShowConfirm(true);
   };
 
   const handleFinalSave = () => {
-    // 4. Pass both statuses to the parent save handler
-    onSave(incident.incident_id, { status, actionStatus, remarks });
+    // FIXED: Passes the current technical finding (status) back UNCHANGED
+    onSave(incident.incident_id, { 
+        status: incident.status, 
+        actionStatus, 
+        remarks 
+    });
     setRemarks("");
     setShowConfirm(false);
   };
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/40 flex justify-center items-center z-[80] animate-in fade-in duration-200" 
-      onClick={onClose}
-    >
-      <div 
-        className="bg-white p-6 rounded-lg w-[450px] shadow-2xl animate-in zoom-in duration-200" 
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-[80]" onClick={onClose}>
+      <div className="bg-white p-6 rounded-lg w-[450px] shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-6 border-b pb-2">
-          <h2 className="text-xl font-bold text-[#091E42]">Update Incident</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X size={20} />
-          </button>
+          <h2 className="text-xl font-bold text-[#091E42]">Unified Ticket Update</h2>
+          <button onClick={onClose}><X size={20} /></button>
         </div>
 
-        <div className="space-y-5">
-          
-          {/* Action Status Field (Lifecycle) */}
+        <div className="space-y-6">
+          {/* PRIMARY: Action Status (Ticket Lifecycle) */}
           <div>
-            <label className="block text-sm font-bold text-[#44546F] mb-2">Action Status (Lifecycle)</label>
+            <label className="block text-sm font-bold text-[#44546F] mb-2 underline decoration-[#0052CC] decoration-2 underline-offset-4">
+              Action Status (Ticket Lifecycle)
+            </label>
             <div className="relative">
               <select 
                 value={actionStatus} 
                 onChange={(e) => setActionStatus(e.target.value)} 
-                className="w-full appearance-none border border-[#DFE1E6] bg-white p-2.5 rounded-md text-sm text-[#172B4D] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer"
+                className="w-full appearance-none border-2 border-[#0052CC]/20 bg-white p-3 rounded-md text-sm font-bold text-[#0052CC] outline-none cursor-pointer"
               >
                 {actionStatusOptions.map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#44546F]">
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#0052CC]">
                 <ChevronDown size={18} />
               </div>
             </div>
           </div>
 
-          {/* Incident Status Field (Technical Finding) */}
+          {/* READ-ONLY: Incident Status (Technical Finding) */}
           <div>
-            <label className="block text-sm font-bold text-[#44546F] mb-2">Incident Status (Technical)</label>
-            <div className="relative">
-              <select 
-                value={status} 
-                onChange={(e) => setStatus(e.target.value)} 
-                className="w-full appearance-none border border-[#DFE1E6] bg-white p-2.5 rounded-md text-sm text-[#172B4D] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer"
-              >
-                {incidentStatusOptions.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#44546F]">
-                <ChevronDown size={18} />
-              </div>
+            <label className="block text-sm font-bold text-[#44546F] mb-2">Incident Status (Technical Finding)</label>
+            <div className="w-full bg-gray-50 border border-gray-200 p-2.5 rounded-md text-sm text-gray-500 font-medium">
+              {incident.status}
             </div>
           </div>
 
-          {/* Remarks Field */}
+          {/* REQUIRED: Investigation Remarks */}
           <div>
             <div className="flex items-center gap-2 mb-2">
                <label className="block text-sm font-bold text-[#44546F]">Investigation Remarks</label>
-               <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">New Note</span>
+               <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Required</span>
             </div>
             <textarea 
-              placeholder="Enter your analysis, findings, or internal notes here... (Required)"
+              placeholder="Enter analysis, findings, or justification for status change..."
               value={remarks} 
               onChange={(e) => setRemarks(e.target.value)} 
-              className="w-full border border-[#DFE1E6] p-3 rounded-md text-sm text-[#172B4D] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all min-h-[120px] resize-y"
+              className="w-full border border-[#DFE1E6] p-3 rounded-md text-sm min-h-[120px] resize-y"
             />
           </div>
         </div>
 
-        {/* Footer Actions */}
         <div className="mt-8 flex justify-end">
           <button 
-            onClick={handleSaveTrigger}
+            onClick={() => setShowConfirm(true)}
             disabled={!remarks.trim()}
-            className="bg-[#1D9C5D] hover:bg-[#16804B] text-white px-5 py-2 rounded-md text-sm font-bold flex items-center gap-2 shadow-sm transition-colors"
+            className="bg-[#0052CC] text-white px-6 py-2.5 rounded-md text-sm font-bold flex items-center gap-2 shadow-md transition-all active:scale-95 disabled:opacity-50"
           >
-            <Check size={18} /> Save Update
+            <Check size={18} /> Update Unified Ticket
           </button>
         </div>
       </div>
@@ -168,8 +132,8 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
       {/* Warning Alert */}
       <ConfirmDialog 
         isOpen={showConfirm}
-        title="Confirm Incident Update"
-        message={`This will set Lifecycle to "${actionStatus}" and Technical Status to "${status}". Remarks will be appended to the audit trail.`}
+        title="Submit Ticket Update"
+        message={`Move ticket history to "${actionStatus}"? Your remarks will be appended to the audit trail.`}
         onConfirm={handleFinalSave}
         onCancel={() => setShowConfirm(false)}
       />

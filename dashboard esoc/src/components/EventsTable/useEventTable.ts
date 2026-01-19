@@ -15,51 +15,54 @@ export const useEventTable = (initialEvents: EventItem[], cardFilter?: { key: st
   }, [initialEvents]);
 
   const filtered = useMemo(() => {
-    return localData
-      .filter((e) => {
-        // 1. Apply Card Filter (from Donut Charts)
-        if (!cardFilter || !cardFilter.key) return true;
+      return localData
+        .filter((e) => {
+          // 1. Apply Card Filter (from Donut Charts)
+          if (!cardFilter || !cardFilter.key) return true;
+          const rowValue = String(e[cardFilter.key as keyof EventItem] ?? "").toLowerCase().trim();
+          const filterValue = String(cardFilter.value ?? "").toLowerCase().trim();
+          return rowValue === filterValue;
+        })
+        .filter((e) => {
+          // 2. Apply Global Search
+          if (!search) return true;
+          const q = search.toLowerCase().trim();
+          return (
+            e.incidentName.toLowerCase().includes(q) || 
+            e.description.toLowerCase().includes(q) ||
+            e.incident_id.toLowerCase().includes(q)
+          );
+        })
+        .filter((e) => {
+          // 3. Apply Multi-select Column Filters
+          return Object.entries(columnFilters).every(([key, values]) => {
+            if (!values || values.length === 0) return true;
 
-        const rowValue = String(e[cardFilter.key as keyof EventItem] ?? "").toLowerCase().trim();
-        const filterValue = String(cardFilter.value ?? "").toLowerCase().trim();
+            let rowValue = e[key as keyof EventItem];
 
-        return rowValue === filterValue;
-      })
-      .filter((e) => {
-        // 2. Apply Global Search
-        if (!search) return true;
-        const q = search.toLowerCase();
-        return (
-          e.incidentName.toLowerCase().includes(q) || 
-          e.description.toLowerCase().includes(q) ||
-          e.incident_id.toLowerCase().includes(q)
-        );
-      })
-      .filter((e) => {
-        // 3. Apply Multi-select Column Filters
-        return Object.entries(columnFilters).every(([key, values]) => {
-          if (!values || values.length === 0) return true;
+            // Format timestamps to match exactly what is shown in dropdown
+            if (key === "timestamp") {
+              rowValue = new Date(String(rowValue)).toLocaleString();
+            }
 
-          let rowValue = String(e[key as keyof EventItem] ?? "");
-
-          // FIX: If filtering by Time, format the row data to match the dropdown string
-          if (key === "timestamp") {
-            rowValue = new Date(rowValue).toLocaleString();
-          }
-
-          return values.includes(rowValue);
+            // NORMALIZATION: Lowercase and Trim both sides for comparison
+            const normalizedRowValue = String(rowValue ?? "").toLowerCase().trim();
+            
+            // Use .some() to compare each selected value against the normalized row data
+            return values.some(val => 
+              String(val).toLowerCase().trim() === normalizedRowValue
+            );
+          });
+        })
+        .sort((a, b) => {
+          // 4. Apply Sorting
+          const aVal = a[sortKey];
+          const bVal = b[sortKey];
+          if (aVal === bVal) return 0;
+          const result = aVal < bVal ? -1 : 1;
+          return sortAsc ? result : -result;
         });
-      })
-      .sort((a, b) => {
-        // 4. Apply Sorting
-        const aVal = a[sortKey];
-        const bVal = b[sortKey];
-        if (aVal === bVal) return 0;
-        const result = aVal < bVal ? -1 : 1;
-        return sortAsc ? result : -result;
-      });
-  }, [localData, search, columnFilters, sortKey, sortAsc, cardFilter]);
-
+    }, [localData, search, columnFilters, sortKey, sortAsc, cardFilter]);
   /* ===================== SELECTION LOGIC ===================== */
   
   const toggleRow = (id: string) => {

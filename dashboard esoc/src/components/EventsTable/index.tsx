@@ -475,7 +475,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
                 }
                 return item;
               }));
-              setReminderMessage("Incident updated with new remarks.");
+              setReminderMessage("Status updated with new remarks.");
               setEditIncident(null);
             }}
           />
