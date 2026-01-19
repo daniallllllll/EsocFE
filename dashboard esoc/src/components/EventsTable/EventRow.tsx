@@ -3,10 +3,10 @@ import { Eye, Edit2, Mail } from "lucide-react";
 
 // 1. ADD: Define the styling mapping for Action Status here
 const actionStatusClass: Record<string, string> = {
-  New: "border border-blue-200 bg-blue-50 text-blue-600",
-  "In Progress": "border border-yellow-200 bg-yellow-50 text-yellow-600",
-  Resolved: "border border-green-200 bg-green-50 text-green-600",
-  Closed: "border border-gray-200 bg-gray-50 text-gray-400",
+  New: "bg-blue-100 text-blue-600 border-blue-200",
+  "In Progress": "bg-yellow-100 text-yellow-600 border-yellow-200",
+  Resolved: "bg-green-100 text-green-600 border-green-200",
+  Closed: "bg-gray-100 text-gray-600 border-gray-200",
 };
 
 export const EventRow = ({ 
