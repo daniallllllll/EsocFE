@@ -1,6 +1,14 @@
 import React from "react";
 import { Eye, Edit2, Mail } from "lucide-react";
 
+// 1. ADD: Define the styling mapping for Action Status here
+const actionStatusClass: Record<string, string> = {
+  New: "border border-blue-200 bg-blue-50 text-blue-600",
+  "In Progress": "border border-yellow-200 bg-yellow-50 text-yellow-600",
+  Resolved: "border border-green-200 bg-green-50 text-green-600",
+  Closed: "border border-gray-200 bg-gray-50 text-gray-400",
+};
+
 export const EventRow = ({ 
   item, 
   isSelected, 
@@ -35,10 +43,22 @@ export const EventRow = ({
           {item.status}
         </span>
       </td>
+      {/* 2. FIXED: This now uses the actionStatusClass defined above */}
+      <td className="px-3 py-3">
+        <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-tight ${actionStatusClass[item.actionStatus || 'New']}`}>
+          {item.actionStatus || "New"}
+        </span>
+      </td>
       <td className="px-4 py-2 flex gap-2">
-        <Eye size={16} className="cursor-pointer text-blue-600" onClick={() => onView(item)} />
-        <Edit2 size={16} className="cursor-pointer text-green-600" onClick={() => onEdit(item)} />
-        <Mail size={16} className="cursor-pointer text-purple-600" onClick={() => onNotify(item)} />
+        <button onClick={() => onView(item)} className="p-1 hover:bg-blue-100 rounded text-blue-600" title="View Details">
+          <Eye size={16} />
+        </button>
+        <button onClick={() => onEdit(item)} className="p-1 hover:bg-green-100 rounded text-green-600" title="Edit Incident">
+          <Edit2 size={16} />
+        </button>
+        <button onClick={() => onNotify(item)} className="p-1 hover:bg-purple-100 rounded text-purple-600" title="Send Notification">
+          <Mail size={16} />
+        </button>
       </td>
     </tr>
   );

@@ -27,8 +27,9 @@ const columns: { key: keyof EventItem; label: string; width: string }[] = [
   { key: "incidentName", label: "Incident Name", width: "w-[220px]" },
   { key: "description", label: "Description Of Incident", width: "w-[160px]" },
   { key: "severity", label: "Severity", width: "w-[120px]" },
-  { key: "status", label: "Status", width: "w-[120px]" },
+  { key: "status", label: "Incident Status", width: "w-[120px]" },
   { key: "source", label: "Source", width: "w-[140px]" },
+  { key: "actionStatus", label: "Action Status", width: "w-[100px]" },
 ];
 
 const severityClass: Record<string, string> = {
@@ -51,6 +52,13 @@ const statusClass: Record<string, string> = {
   "Resolved Duplicate": "bg-slate-100 text-slate-600 font-bold",
   "Resolved Known Issue": "bg-orange-100 text-orange-700 font-bold",
   "Resolved Other": "bg-gray-100 text-gray-500 font-bold",
+};
+
+const actionStatusClass: Record<string, string> = {
+  New: "border border-blue-200 bg-blue-50 text-blue-600",
+  "In Progress": "border border-yellow-200 bg-yellow-50 text-yellow-600",
+  Resolved: "border border-green-200 bg-green-50 text-green-600",
+  Closed: "border border-gray-200 bg-gray-50 text-gray-400",
 };
 
 export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilter }) => {
@@ -290,11 +298,11 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
       </div>
 
       {/* 2. Table */}
-      <div className="flex-1 overflow-auto custom-scrollbar bg-white relative">
-        <table className="min-w-[1400px] text-sm border-collapse">
+      <div className="flex-1 overflow-auto custom-scrollbar bg-white relative border rounded-lg">
+        <table className="min-w-[1540px] text-sm border-collapse"> {/* Increased min-width for new column */}
           <thead className="sticky top-0 z-40 bg-white shadow-sm">
             <tr className="bg-white">
-              <th className="px-2 py-3 w-10 bg-white border-b">
+              <th className="px-2 py-3 w-10 bg-white border-b text-center">
                 <input
                   type="checkbox"
                   className="rounded border-gray-300 text-[#0052CC] focus:ring-[#0052CC]"
@@ -302,6 +310,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
                   onChange={toggleAll}
                 />
               </th>
+              {/* Dynamic Data Columns */}
               {columns.map((col) => (
                 <th key={col.key} className={`px-3 py-2 align-top bg-white border-b ${col.width}`}>
                   <div
@@ -325,7 +334,8 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
                   />
                 </th>
               ))}
-              <th className="px-3 py-2 text-gray-600 bg-white border-b">Actions</th>
+              {/* FIXED: Dedicated Action Header at the far right */}
+              <th className="px-3 py-2 text-gray-600 bg-white border-b w-[120px] text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white">
@@ -339,28 +349,37 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
                     onChange={() => toggleRow(item.incident_id)}
                   />
                 </td>
-                <td className="px-3 py-3 font-medium text-gray-700 truncate max-w-[140px]" title={String(item.incident_id)}>{item.incident_id}</td>
-                <td className="px-3 py-3 text-gray-500 truncate max-w-[180px]" title={new Date(item.timestamp).toLocaleString()}>{new Date(item.timestamp).toLocaleString()}</td>
-                <td className="px-3 py-3 text-gray-700 truncate max-w-[160px]" title={item.customerName}>{item.customerName}</td>
-                <td className="px-3 py-3 text-gray-700 truncate max-w-[140px]" title={item.platform}>{item.platform}</td>
-                <td className="px-3 py-3 text-gray-700 font-semibold truncate max-w-[220px]" title={item.incidentName}>{item.incidentName}</td>
-                <td className="px-3 py-3 text-gray-500 text-xs max-w-[200px] truncate cursor-help" title={item.description}>{item.description}</td>
-                <td className="px-3 py-3">
+                <td className="px-3 py-3 font-medium text-gray-700 truncate max-w-[140px]">{item.incident_id}</td>
+                <td className="px-3 py-3 text-gray-500 truncate max-w-[180px]">{new Date(item.timestamp).toLocaleString()}</td>
+                <td className="px-3 py-3 text-gray-700 truncate max-w-[160px]">{item.customerName}</td>
+                <td className="px-3 py-3 text-gray-700 truncate max-w-[140px]">{item.platform}</td>
+                <td className="px-3 py-3 text-gray-700 font-semibold truncate max-w-[220px]">{item.incidentName}</td>
+                <td className="px-3 py-3 text-gray-500 text-xs max-w-[200px] truncate">{item.description}</td>
+                <td className="px-3 py-3 text-center">
                   <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${severityClass[item.severity]}`}>{item.severity}</span>
                 </td>
-                <td className="px-3 py-3">
+                <td className="px-3 py-3 text-center">
                   <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${statusClass[item.status] || "bg-gray-100 text-gray-600"}`}>{item.status}</span>
                 </td>
-                <td className="px-3 py-3 text-gray-400 truncate max-w-[140px]" title={item.source}>{item.source}</td>
+                <td className="px-3 py-3 text-gray-400 truncate max-w-[140px]">{item.source}</td>
+
+                {/* NEW: Dedicated Action Status Column before the buttons */}
+                <td className="px-3 py-3 text-center">
+                  <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-tight ${actionStatusClass[item.actionStatus || 'New']}`}>
+                    {item.actionStatus || "New"}
+                  </span>
+                </td>
+
+                {/* FIXED: Action Buttons moved to the final column */}
                 <td className="px-3 py-3">
-                  <div className="flex gap-3">
-                    <button onClick={() => setViewIncident(item)} className="p-1 hover:bg-blue-100 rounded-md transition-colors text-blue-600" title="View Details">
+                  <div className="flex gap-2 justify-center">
+                    <button onClick={() => setViewIncident(item)} className="p-1 hover:bg-blue-100 rounded-md text-blue-600 transition-colors" title="View Details">
                       <Eye size={16} />
                     </button>
-                    <button onClick={() => setEditIncident(item)} className="p-1 hover:bg-green-100 rounded-md transition-colors text-green-600" title="Edit Incident">
+                    <button onClick={() => setEditIncident(item)} className="p-1 hover:bg-green-100 rounded-md text-green-600 transition-colors" title="Edit Incident">
                       <Edit2 size={16} />
                     </button>
-                    <button onClick={() => setEmailIncident(item)} className="p-1 hover:bg-purple-100 rounded-md transition-colors text-purple-600" title="Send Notification">
+                    <button onClick={() => setEmailIncident(item)} className="p-1 hover:bg-purple-100 rounded-md text-purple-600 transition-colors" title="Send Notification">
                       <Mail size={16} />
                     </button>
                   </div>

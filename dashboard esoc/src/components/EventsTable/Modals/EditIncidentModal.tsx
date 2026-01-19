@@ -36,18 +36,20 @@ const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }: any) => 
 interface EditProps {
   incident: EventItem | null;
   onClose: () => void;
-  // Note: Updated to match the save logic in your index.tsx
-  onSave: (id: string, updates: { status: string; remarks: string }) => void;
+  // Updated to include actionStatus in the update object
+  onSave: (id: string, updates: { status: string; actionStatus: string; remarks: string }) => void;
 }
 
 export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSave }) => {
+  // 1. Separate States for both status types
   const [status, setStatus] = useState(incident?.status || "");
+  const [actionStatus, setActionStatus] = useState(incident?.actionStatus || "New");
   const [remarks, setRemarks] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
 
   if (!incident) return null;
 
-  // 1. Define the platform-specific status lists
+  // 2. Incident Status Options (Technical Findings)
   const platformStatuses: Record<string, string[]> = {
     cortex: [
       "New", 
@@ -62,31 +64,30 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
     qradar: ["Open", "Closed"]
   };
 
-  // 2. Determine options based on current platform
-  const currentPlatform = incident.platform?.toLowerCase() || "";
-  const statusOptions = platformStatuses[currentPlatform] || ["Open", "Closed"];
+  // 3. Action Status Options (Lifecycle)
+  const actionStatusOptions = ["New", "In Progress", "Resolved", "Closed"];
 
-  // Step 1: Trigger the warning
+  const currentPlatform = incident.platform?.toLowerCase() || "";
+  const incidentStatusOptions = platformStatuses[currentPlatform] || ["Open", "Closed"];
+
   const handleSaveTrigger = () => {
     setShowConfirm(true);
   };
 
-  // Step 2: Finalize the save after confirmation
   const handleFinalSave = () => {
-    onSave(incident.incident_id, { status, remarks });
+    // 4. Pass both statuses to the parent save handler
+    onSave(incident.incident_id, { status, actionStatus, remarks });
     setRemarks("");
     setShowConfirm(false);
   };
 
   return (
-    /* FIXED: Added onClick={onClose} to the overlay to allow closing when clicking outside */
     <div 
       className="fixed inset-0 bg-black/40 flex justify-center items-center z-[80] animate-in fade-in duration-200" 
       onClick={onClose}
     >
       <div 
         className="bg-white p-6 rounded-lg w-[450px] shadow-2xl animate-in zoom-in duration-200" 
-        /* IMPORTANT: stopPropagation prevents the modal from closing when you click INSIDE the form */
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -98,16 +99,17 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
         </div>
 
         <div className="space-y-5">
-          {/* Status Field */}
+          
+          {/* Action Status Field (Lifecycle) */}
           <div>
-            <label className="block text-sm font-bold text-[#44546F] mb-2">Status</label>
+            <label className="block text-sm font-bold text-[#44546F] mb-2">Action Status (Lifecycle)</label>
             <div className="relative">
               <select 
-                value={status} 
-                onChange={(e) => setStatus(e.target.value)} 
+                value={actionStatus} 
+                onChange={(e) => setActionStatus(e.target.value)} 
                 className="w-full appearance-none border border-[#DFE1E6] bg-white p-2.5 rounded-md text-sm text-[#172B4D] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer"
               >
-                {statusOptions.map((opt) => (
+                {actionStatusOptions.map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
               </select>
@@ -117,7 +119,26 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
             </div>
           </div>
 
-          {/* CHANGED: Description Field became Remarks Field */}
+          {/* Incident Status Field (Technical Finding) */}
+          <div>
+            <label className="block text-sm font-bold text-[#44546F] mb-2">Incident Status (Technical)</label>
+            <div className="relative">
+              <select 
+                value={status} 
+                onChange={(e) => setStatus(e.target.value)} 
+                className="w-full appearance-none border border-[#DFE1E6] bg-white p-2.5 rounded-md text-sm text-[#172B4D] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer"
+              >
+                {incidentStatusOptions.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#44546F]">
+                <ChevronDown size={18} />
+              </div>
+            </div>
+          </div>
+
+          {/* Remarks Field */}
           <div>
             <div className="flex items-center gap-2 mb-2">
                <label className="block text-sm font-bold text-[#44546F]">Investigation Remarks</label>
@@ -129,9 +150,6 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
               onChange={(e) => setRemarks(e.target.value)} 
               className="w-full border border-[#DFE1E6] p-3 rounded-md text-sm text-[#172B4D] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all min-h-[120px] resize-y"
             />
-            <p className="text-[10px] text-gray-400 mt-1 italic">
-               Note: Your remarks will be timestamped and signed automatically.
-            </p>
           </div>
         </div>
 
@@ -142,7 +160,7 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
             disabled={!remarks.trim()}
             className="bg-[#1D9C5D] hover:bg-[#16804B] text-white px-5 py-2 rounded-md text-sm font-bold flex items-center gap-2 shadow-sm transition-colors"
           >
-            <Check size={18} /> Save
+            <Check size={18} /> Save Update
           </button>
         </div>
       </div>
@@ -150,8 +168,8 @@ export const EditIncidentModal: React.FC<EditProps> = ({ incident, onClose, onSa
       {/* Warning Alert */}
       <ConfirmDialog 
         isOpen={showConfirm}
-        title="Submit Remarks and Update Incident"
-        message={`Confirming will update the status to "${status}"? and append your remarks to the audit trail.`}
+        title="Confirm Incident Update"
+        message={`This will set Lifecycle to "${actionStatus}" and Technical Status to "${status}". Remarks will be appended to the audit trail.`}
         onConfirm={handleFinalSave}
         onCancel={() => setShowConfirm(false)}
       />

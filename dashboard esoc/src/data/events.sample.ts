@@ -8,6 +8,7 @@ export interface EventItem {
   description: string;
   source: string;
   customerName: string;
+  
 }
 
 export const sampleEvents: EventItem[] = [
