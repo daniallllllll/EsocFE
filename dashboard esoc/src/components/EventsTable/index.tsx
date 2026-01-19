@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { useEventTable } from "./useEventTable";
 import { MultiSelectFilter } from "./MultiSelectFilter";
 import { EventItem } from "../../types/event";
-import { ChevronUp, ChevronDown, Layers, Download, Eye, Edit2, Mail, Check, X, ChevronRight, AlertTriangle } from "lucide-react";
+import { ChevronUp, ChevronDown, Layers, Download, Eye, Edit2, Mail, Check, X, ChevronRight, AlertTriangle, FileText } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 // Import Modals
 import { ViewIncidentModal } from "./Modals/ViewIncidentModal";
@@ -130,6 +132,40 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
     URL.revokeObjectURL(url);
   };
 
+  // New: Export to PDF
+  const exportToPDF = (dataToExport: EventItem[]) => {
+    const doc = new jsPDF("l", "mm", "a4");
+    const timestamp = new Date().toLocaleString();
+
+    doc.setFontSize(18);
+    doc.text("Incident Report", 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${timestamp}`, 14, 22);
+    const tableColumn = columns.map(col => col.label);
+
+    const tableRows = dataToExport.map(item => [
+      item.incident_id,
+      new Date(item.timestamp).toLocaleString(),
+      item.customerName,
+      item.incidentName,
+      item.severity,
+      item.status
+    ]);
+
+    autoTable(doc, {
+      startY: 35,
+      head: [["ID", "Time", "Customer", "Incident Name", "Severity", "Status"]],
+      body: tableRows,
+      theme: "striped",
+      headStyles: { fillColor: [0, 82, 204] },
+      styles: { fontSize: 8 }
+    });
+
+    doc.save(`incident-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+      
+
   const handleResetAll = () => {
     setColumnFilters({}); // Clears dropdowns
     if (cardFilter) {
@@ -220,6 +256,14 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         >
           <Download className="h-4 w-4" />
           Export ({selectedIds.length})
+        </button>
+
+        <button
+          onClick={() => exportToPDF(selectedIds.length > 0 ? filtered.filter(e => selectedIds.includes(e.incident_id)) : filtered)}
+          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+        >
+          <FileText size={16} />
+          Download PDF
         </button>
 
         {/* NEW: Reset Button */}
@@ -326,6 +370,31 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
           </tbody>
         </table>
       </div>
+
+      {/* 3. Record Count Footer (NEW PLACEMENT) */}
+      <div className="mt-4 px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-4">
+          <p className="text-sm text-gray-600 font-medium">
+            Showing <span className="text-[#0052CC] font-bold">{filtered.length}</span> of{" "}
+            <span className="text-gray-900 font-bold">{localData.length}</span> incidents
+          </p>
+          
+          {/* Progress bar shows how much of the data is currently visible after filtering */}
+          {filtered.length !== localData.length && (
+            <div className="flex items-center gap-2">
+              <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-500 transition-all duration-500" 
+                  style={{ width: `${(filtered.length / localData.length) * 100}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Filtered View</span>
+            </div>
+          )}
+        </div>
+        <p className="text-[11px] text-gray-400 italic">SOC Dashboard v2.0</p>
+      </div>
+
 
     {/* 3. STICKY BULK ACTION FOOTER */}
       {selectedIds.length > 0 && bulkAction && (

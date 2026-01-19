@@ -5,6 +5,7 @@ import EventsTable from "../components/EventsTable";
 import { EventItem } from "../types/event"; 
 import { FilterX } from "lucide-react";
 
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [events, setEvents] = useState<EventItem[]>([]);
