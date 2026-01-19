@@ -19,6 +19,7 @@ const normalizeStatus = (s: string) => {
   const lower = s?.toLowerCase() || "";
   if (lower === "open") return "Open";
   if (lower === "resolved" || lower.includes("resolved")) return "Resolved";
+  if (lower === "closed" || lower.includes("closed")) return "Closed";
   return "New";
 };
 
