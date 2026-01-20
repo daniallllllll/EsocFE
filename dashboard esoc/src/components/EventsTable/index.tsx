@@ -85,6 +85,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
   const [emailIncident, setEmailIncident] = useState<EventItem | null>(null);
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   /* --- DYNAMIC FILTER OPTIONS (Non-Hardcoded) --- */
   const getOptions = (key: keyof EventItem) => {
@@ -142,35 +143,35 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
 
   // New: Export to PDF
   const exportToPDF = (dataToExport: EventItem[]) => {
-    const doc = new jsPDF("l", "mm", "a4");
-    const timestamp = new Date().toLocaleString();
+      const doc = new jsPDF("l", "mm", "a4");
+      const timestamp = new Date().toLocaleString();
 
-    doc.setFontSize(18);
-    doc.text("Incident Report", 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Generated on: ${timestamp}`, 14, 22);
-    const tableColumn = columns.map(col => col.label);
+      doc.setFontSize(18);
+      doc.text("Unified Incident Report", 14, 15);
+      doc.setFontSize(10);
+      doc.text(`Generated on: ${timestamp}`, 14, 22);
 
-    const tableRows = dataToExport.map(item => [
-      item.incident_id,
-      new Date(item.timestamp).toLocaleString(),
-      item.customerName,
-      item.incidentName,
-      item.severity,
-      item.status
-    ]);
+      const tableRows = dataToExport.map(item => [
+        item.incident_id,
+        new Date(item.timestamp).toLocaleString(),
+        item.customerName || "--",
+        item.incidentName,
+        item.severity,
+        item.status,
+        item.actionStatus || "New" // Added for Unified ESOC system
+      ]);
 
-    autoTable(doc, {
-      startY: 35,
-      head: [["ID", "Time", "Customer", "Incident Name", "Severity", "Status"]],
-      body: tableRows,
-      theme: "striped",
-      headStyles: { fillColor: [0, 82, 204] },
-      styles: { fontSize: 8 }
-    });
+      autoTable(doc, {
+        startY: 35,
+        head: [["ID", "Time", "Customer", "Incident Name", "Severity", "Inc. Status", "Action Status"]],
+        body: tableRows,
+        theme: "striped",
+        headStyles: { fillColor: [0, 82, 204] },
+        styles: { fontSize: 8 }
+      });
 
-    doc.save(`incident-report-${new Date().toISOString().split('T')[0]}.pdf`);
-  };
+      doc.save(`incident-report-${new Date().toISOString().split('T')[0]}.pdf`);
+    };
 
       
 
@@ -257,22 +258,46 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
           </button>
         )}
 
-        <button
-          onClick={() => exportToCSV(filtered.filter(e => selectedIds.includes(e.incident_id)))}
-          disabled={selectedIds.length === 0}
-          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition"
-        >
-          <Download className="h-4 w-4" />
-          Export ({selectedIds.length})
-        </button>
+        <div className="relative">
+          <button 
+            onClick={() => setIsExportOpen(!isExportOpen)}
+            className="flex items-center gap-2 bg-[#1D9C5D] hover:bg-[#16804B] text-white px-4 py-2 rounded-md text-sm font-bold shadow-sm transition-all"
+          >
+            <Download size={16} />
+            Export ({selectedIds.length > 0 ? selectedIds.length : filtered.length})
+            <ChevronDown size={14} className={`transition-transform ${isExportOpen ? 'rotate-180' : ''}`} />
+          </button>
 
-        <button
-          onClick={() => exportToPDF(selectedIds.length > 0 ? filtered.filter(e => selectedIds.includes(e.incident_id)) : filtered)}
-          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
-        >
-          <FileText size={16} />
-          Download PDF
-        </button>
+          {isExportOpen && (
+            <>
+              {/* Invisible backdrop to close dropdown when clicking outside */}
+              <div className="fixed inset-0 z-50" onClick={() => setIsExportOpen(false)} />
+              
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                <button 
+                  onClick={() => { 
+                    exportToCSV(selectedIds.length > 0 ? filtered.filter(e => selectedIds.includes(e.incident_id)) : filtered); 
+                    setIsExportOpen(false); 
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                >
+                  <FileText size={16} className="text-green-600" />
+                  Export to CSV
+                </button>
+                <button 
+                  onClick={() => { 
+                    exportToPDF(selectedIds.length > 0 ? filtered.filter(e => selectedIds.includes(e.incident_id)) : filtered); 
+                    setIsExportOpen(false); 
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <FileText size={16} className="text-red-600" />
+                  Export to PDF
+                </button>
+                </div>
+              </>
+            )}
+          </div>
 
         {/* NEW: Reset Button */}
         {(Object.keys(columnFilters).length > 0 || cardFilter) && (
@@ -458,24 +483,33 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         incident={editIncident}
         onClose={() => setEditIncident(null)}
         onSave={(id, updates) => {
-          setLocalData(prev => prev.map(item => {
-            if (item.incident_id === id) {
+              setLocalData(prev => prev.map(item => {
+                if (item.incident_id === id) {
+                  // 1. Get logged-in analyst info
+                  const authUser = JSON.parse(localStorage.getItem("auth_user") || '{"email":"Unknown Analyst"}');
+                  const now = new Date().toLocaleString();
+                  
+                  // 2. Create the new timeline event object
+                  const newTimelineEntry = {
+                    actionStatus: updates.actionStatus, // Lifecycle (e.g., In Progress)
+                    status: item.status,               // Keep technical status
+                    remark: updates.remarks,           // The new note
+                    actionBy: authUser.email,          // Who did it
+                    timestamp: now                     // When
+                  };
 
-              // 1. Get user from local storage
-              const authUser = JSON.parse(localStorage.getItem("auth_user") || '{"email":"Unknown"}');
-              const now = new Date().toLocaleString();
-              // Access 'remarks' from updates
-              const signature = `\n\n[REMARK - ${now} | Analyst: ${authUser.email}]:\n${updates.remarks}`;
-              
-              return { 
-                ...item, 
-                status: updates.status, 
-                description: updates.remarks ? `${item.description}${signature}` : item.description 
-              };
+                  // 3. Update the incident with the new timeline history
+                  return { 
+                    ...item, 
+                    actionStatus: updates.actionStatus, // Update lifecycle
+                    // Spread existing timeline and add new entry to the front
+                    timeline: [newTimelineEntry, ...(item.timeline || [])] 
+                  };
                 }
                 return item;
               }));
-              setReminderMessage("Status updated with new remarks.");
+              
+              setReminderMessage(`Ticket ${id} status updated and logged to timeline.`);
               setEditIncident(null);
             }}
           />

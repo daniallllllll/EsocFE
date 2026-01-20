@@ -10,4 +10,15 @@ export interface EventItem {
   description: string;
   actionStatus?: string;
   source: string;
+  assignedTo?: string;
+  remarks?: string;
+  timeline?: TimelineEvent[];
+}
+
+export interface TimelineEvent {
+  actionStatus: string;  
+  status: string;        
+  remark: string;        
+  actionBy: string;      
+  timestamp: string;     
 }
