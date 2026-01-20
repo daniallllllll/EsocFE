@@ -103,6 +103,15 @@ export const ViewIncidentModal: React.FC<any> = ({ incident, onClose, onEdit, on
                   </div>
                   <p className="text-xs font-mono text-gray-700 truncate">{incident.source || "--"}</p>
                 </section>
+
+                <section className="bg-green-50/50 p-3 rounded-lg border border-green-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <User size={14} className="text-green-500" />
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Assigned To</label>
+                  </div>
+                  <p className="text-xs font-mono text-gray-700 truncate">{incident.assignedTo || "--"}</p>
+                </section>
+                
               </div>
 
               <section>
