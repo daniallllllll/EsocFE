@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, ExternalLink, User, Server, Clock, Tag, Info } from "lucide-react";
+import { X, User, Server, Clock, Info } from "lucide-react";
 import { EventItem } from "../../../types/event";
 
 export const ViewIncidentModal: React.FC<any> = ({ incident, onClose, onEdit, onNotify }) => {
@@ -7,10 +7,19 @@ export const ViewIncidentModal: React.FC<any> = ({ incident, onClose, onEdit, on
 
   if (!incident) return null;
 
-  const formatTime = (val: any) => {
-    if (!val) return "--";
-    const date = new Date(val);
-    return date.toLocaleString();
+  // NEW: Dynamic Local Time Formatter
+  const formatToLocalTime = (isoString: string) => {
+    if (!isoString) return "--";
+    const date = new Date(isoString);
+    return date.toLocaleString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    }).replace(/\//g, '/'); 
   };
 
   return (
@@ -61,8 +70,7 @@ export const ViewIncidentModal: React.FC<any> = ({ incident, onClose, onEdit, on
           
           {activeTab === "info" ? (
             <div className="space-y-6">
-              
-              {/* NEW: Labeled Status and Severity */}
+              {/* Labeled Status and Severity */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Incident Status</label>
@@ -92,8 +100,6 @@ export const ViewIncidentModal: React.FC<any> = ({ incident, onClose, onEdit, on
                 </div>
               </section>
 
-              {/* METRICS GRID DELETED AS REQUESTED */}
-
               {/* Involved Entities */}
               <div className="space-y-4">
                 <section className="bg-blue-50/50 p-3 rounded-lg border border-blue-100">
@@ -109,9 +115,8 @@ export const ViewIncidentModal: React.FC<any> = ({ incident, onClose, onEdit, on
                     <User size={14} className="text-green-500" />
                     <label className="text-[10px] font-bold text-gray-500 uppercase">Assigned To</label>
                   </div>
-                  <p className="text-xs font-mono text-gray-700 truncate">{incident.assignedTo || "--"}</p>
+                  <p className="text-xs font-mono text-gray-700 truncate">{incident.assignedTo || "Unassigned"}</p>
                 </section>
-                
               </div>
 
               <section>
@@ -121,11 +126,11 @@ export const ViewIncidentModal: React.FC<any> = ({ incident, onClose, onEdit, on
                 </div>
               </section>
 
-              {/* Timestamp and Tags */}
+              {/* Detection Time */}
               <div className="pt-4 border-t border-dashed space-y-3">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-400 flex items-center gap-2"><Clock size={12}/> Detection Time</span>
-                  <span className="font-medium text-gray-900">{formatTime(incident.timestamp)}</span>
+                  <span className="font-medium text-gray-900">{formatToLocalTime(incident.timestamp)}</span>
                 </div>
               </div>
             </div>
@@ -134,26 +139,29 @@ export const ViewIncidentModal: React.FC<any> = ({ incident, onClose, onEdit, on
             <div className="py-2">
               {incident.timeline && incident.timeline.length > 0 ? (
                 <div className="relative border-l-4 border-teal-600 ml-6">
-                  {incident.timeline.map((event, idx) => (
+                  {incident.timeline?.map((event, idx) => (
                     <div key={idx} className="mb-10 ml-8 relative">
+                      {/* Visual Node */}
                       <div className="absolute -left-[42px] top-1 w-6 h-6 rounded-full bg-white border-4 border-teal-600 shadow-sm z-10" />
+                      
+                      {/* Date Badge */}
                       <div className="inline-block bg-[#004040] text-white text-[10px] font-bold px-3 py-1 rounded-md mb-3">
-                        {event.timestamp}
+                        {formatToLocalTime(event.timestamp)}
                       </div>
+
+                      {/* Card Content */}
                       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
                         <h4 className="text-teal-700 font-bold text-xs uppercase tracking-wider mb-4 border-b pb-2">
                           {event.actionStatus} PROCESS
                         </h4>
-                        <div className="space-y-4">
-                          <div>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase">Remark :</p>
-                            <p className="text-sm text-gray-600 italic mt-1 bg-gray-50 p-2 rounded">
-                              {event.remark || "No remarks provided."}
-                            </p>
-                          </div>
+                        <div className="space-y-3">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase">Remark :</p>
+                          <p className="text-sm text-gray-600 italic bg-gray-50 p-3 rounded leading-relaxed">
+                            {event.remark}
+                          </p>
                           <div className="flex items-center gap-2 pt-2 text-[11px]">
                             <span className="font-bold text-gray-500">Action By :</span>
-                            <span className="font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded">{event.actionBy}</span>
+                            <span className="font-bold text-[#0052CC]">{event.actionBy}</span>
                           </div>
                         </div>
                       </div>
@@ -161,9 +169,9 @@ export const ViewIncidentModal: React.FC<any> = ({ incident, onClose, onEdit, on
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-20 text-gray-400 flex flex-col items-center gap-3">
-                  <Clock size={48} className="opacity-20" />
-                  <p className="text-sm font-medium italic">No timeline entries found.</p>
+                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                  <Clock size={48} className="mb-4 opacity-20" />
+                  <p className="text-sm italic">No timeline events available for this incident.</p>
                 </div>
               )}
             </div>
