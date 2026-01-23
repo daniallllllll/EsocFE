@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useEventTable } from "./useEventTable";
 import { MultiSelectFilter } from "./MultiSelectFilter";
 import { EventItem } from "../../types/event";
-import { ChevronUp, ChevronDown, Layers, Download, Eye, Edit2, Mail, Check, X, ChevronRight, AlertTriangle, FileText } from "lucide-react";
+import { ChevronUp, ChevronDown, Layers, Download, Eye, Edit2, Mail, Check, X, ChevronRight, AlertTriangle, FileText, Clock } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -87,6 +87,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
   const [emailIncident, setEmailIncident] = useState<EventItem | null>(null);
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [pendingBulkAction, setPendingBulkAction] = useState<{status: string, ids: string[]} | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
 
   /* --- DYNAMIC FILTER OPTIONS (Non-Hardcoded) --- */
@@ -102,6 +103,21 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
       .filter(Boolean)
       .sort();
   };
+
+      // 1. Updated dropdown handler to include all 4 required statuses
+      const startBulkUpdate = (statusLabel: string) => {
+        if (selectedIds.length === 0) return;
+        
+        // Directly use the label passed from the dropdown (New, In Progress, etc.)
+        setPendingBulkAction({
+          status: statusLabel,
+          ids: [...selectedIds]
+        });
+        
+        // Set the first selected item as reference and open modal
+        setEmailIncident(localData.find(e => e.incident_id === selectedIds[0]) || null);
+        setBulkOpen(false);
+      };
 
   /* ===================== UPDATED HANDLERS ===================== */
   const handleBulkAction = (action: string) => {
@@ -130,6 +146,38 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
     setShowBulkConfirm(false);
   };
 
+      // 2. Final execution after modal provides remark and email
+      const executeBulkUpdate = (remark: string, analystEmail: string) => {
+        if (!pendingBulkAction) return;
+        const now = new Date().toLocaleString();
+
+        setLocalData((prev) =>
+          prev.map((item) => {
+            if (!pendingBulkAction.ids.includes(item.incident_id)) return item;
+
+            // Use the email collected from the modal's CC/Analyst field
+            const newEntry = {
+              actionStatus: pendingBulkAction.status,
+              status: item.status,
+              remark: remark,
+              actionBy: analystEmail, 
+              timestamp: now
+            };
+
+            return { 
+              ...item, 
+              actionStatus: pendingBulkAction.status,
+              timeline: [newEntry, ...(item.timeline || [])] 
+            };
+          })
+        );
+        
+        setReminderMessage(`Bulk status updated to ${pendingBulkAction.status} for ${pendingBulkAction.ids.length} items.`);
+        setSelectedIds([]);
+        setPendingBulkAction(null);
+        setEmailIncident(null); // Close the modal
+      };
+        
   const exportToCSV = (dataToExport: EventItem[]) => {
     const headers = columns.map(col => col.label).join(",");
     const rows = dataToExport.map(e => columns.map(col => `"${String(e[col.key] ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -213,117 +261,74 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
   return (
     <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)] overflow-visible">
       
-      {/* 1. Header Actions */}
-      <div className="flex items-center gap-3 mb-4 z-50 overflow-visible">
-        <div className="relative">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setBulkOpen((prev) => !prev);
-            }}
-            className="flex items-center gap-2 bg-[#0052CC] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-opacity-90 transition"
-          >
-            <Layers className="h-4 w-4" />
-            <span>Bulk Actions</span>
-            <ChevronDown className={`h-4 w-4 transition-transform ${bulkOpen ? "rotate-180" : ""}`} />
-          </button>
+            {/* 1. Header Actions */}
+              <div className="flex items-center justify-between mb-6 z-50 overflow-visible">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBulkOpen((prev) => !prev);
+                      }}
+                      className="flex items-center gap-2 bg-[#0052CC] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-opacity-90 transition shadow-sm"
+                    >
+                      <Layers className="h-4 w-4" />
+                      <span>Bulk Action Status</span>
+                      <ChevronDown size={14} className={`transition-transform ${bulkOpen ? "rotate-180" : ""}`} />
+                    </button>
 
-          {bulkOpen && (
-            <div className="absolute left-0 mt-2 w-72 bg-white border rounded-lg shadow-xl z-[100] py-1 animate-in fade-in zoom-in duration-100 max-h-[450px] overflow-y-auto">
-              {/* --- CORTEX SECTION --- */}
-              <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50">Cortex XDR</div>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => { setBulkAction("open_new"); setBulkOpen(false); }}>New</button>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => { setBulkAction("investigation"); setBulkOpen(false); }}>Under Investigation</button>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => { setBulkAction("res_true"); setBulkOpen(false); }}>Resolved True Positive</button>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-600" onClick={() => { setBulkAction("res_false"); setBulkOpen(false); }}>Resolved False Positive</button>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => { setBulkAction("res_dup"); setBulkOpen(false); }}>Resolved Duplicate</button>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-gray-400" onClick={() => { setBulkAction("res_known"); setBulkOpen(false); }}>Resolved Known Issue</button>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-gray-400" onClick={() => { setBulkAction("res_other"); setBulkOpen(false); }}>Resolved Other</button>
+                    {bulkOpen && (
+                      <div className="absolute left-0 mt-2 w-72 bg-white border rounded-lg shadow-xl z-[100] py-1">
+                        <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50">Set Action Status</div>
+                        <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => startBulkUpdate("New")}>New</button>
+                        <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => startBulkUpdate("In Progress")}>In Progress</button>
+                        <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => startBulkUpdate("Resolved")}>Resolved</button>
+                        <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => startBulkUpdate("Closed")}>Closed</button>
+                      </div>
+                    )}
+                  </div>
+                {/* Export Dropdown */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setIsExportOpen(!isExportOpen)}
+                    className="flex items-center gap-2 bg-[#1D9C5D] hover:bg-[#16804B] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all"
+                  >
+                    <Download size={16} />
+                    Export ({selectedIds.length > 0 ? selectedIds.length : filtered.length})
+                    <ChevronDown size={14} className={`transition-transform ${isExportOpen ? 'rotate-180' : ''}`} />
+                  </button>
 
-              <div className="border-t my-1"></div>
-
-              {/* --- TREND / QRADAR SECTION --- */}
-              <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50">Trend Micro & QRadar</div>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => { setBulkAction("open_new"); setBulkOpen(false); }}>Open</button>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => { setBulkAction("close_resolve"); setBulkOpen(false); }}>Closed</button>
-            </div>
-          )}
-        </div>
-
-        {bulkAction && selectedIds.length > 0 && (
-          <button
-            onClick={() => handleBulkAction(bulkAction)}
-            className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium animate-in slide-in-from-left-2"
-          >
-            <Check className="h-4 w-4" />
-            Apply {bulkAction.replace(/_/g, " ")}
-          </button>
-        )}
-
-        <div className="relative">
-          <button 
-            onClick={() => setIsExportOpen(!isExportOpen)}
-            className="flex items-center gap-2 bg-[#1D9C5D] hover:bg-[#16804B] text-white px-4 py-2 rounded-md text-sm font-bold shadow-sm transition-all"
-          >
-            <Download size={16} />
-            Export ({selectedIds.length > 0 ? selectedIds.length : filtered.length})
-            <ChevronDown size={14} className={`transition-transform ${isExportOpen ? 'rotate-180' : ''}`} />
-          </button>
-
-          {isExportOpen && (
-            <>
-              {/* Invisible backdrop to close dropdown when clicking outside */}
-              <div className="fixed inset-0 z-50" onClick={() => setIsExportOpen(false)} />
-              
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                <button 
-                  onClick={() => { 
-                    exportToCSV(selectedIds.length > 0 ? filtered.filter(e => selectedIds.includes(e.incident_id)) : filtered); 
-                    setIsExportOpen(false); 
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100"
-                >
-                  <FileText size={16} className="text-green-600" />
-                  Export to CSV
-                </button>
-                <button 
-                  onClick={() => { 
-                    exportToPDF(selectedIds.length > 0 ? filtered.filter(e => selectedIds.includes(e.incident_id)) : filtered); 
-                    setIsExportOpen(false); 
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <FileText size={16} className="text-red-600" />
-                  Export to PDF
-                </button>
+                  {isExportOpen && (
+                    <>
+                      <div className="fixed inset-0 z-50" onClick={() => setIsExportOpen(false)} />
+                      <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                        <button onClick={() => { exportToCSV(selectedIds.length > 0 ? filtered.filter(e => selectedIds.includes(e.incident_id)) : filtered); setIsExportOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                          <FileText size={16} className="text-green-600" /> Export CSV
+                        </button>
+                        <button onClick={() => { exportToPDF(selectedIds.length > 0 ? filtered.filter(e => selectedIds.includes(e.incident_id)) : filtered); setIsExportOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                          <FileText size={16} className="text-red-600" /> Export PDF
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
-              </>
-            )}
-          </div>
+              </div>
 
-        {/* NEW: Reset Button */}
-        {(Object.keys(columnFilters).length > 0 || cardFilter) && (
-        <button
-          onClick={handleResetAll}
-          className="flex items-center gap-2 bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors"
-        >
-          <X size={16} />
-          Reset All Filters
-        </button>
-        )}
-
-        {selectedIds.length > 0 && (
-          <div className="flex items-center gap-2 ml-auto">
-            <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-              {selectedIds.length} selected
-            </span>
-            <button onClick={() => setSelectedIds([])} className="text-gray-400 hover:text-red-500">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-      </div>
-
+              {/* Right Side Status Panel */}
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex items-center gap-2 text-gray-500 font-medium">
+                  <Clock size={12} className="text-[#0052CC]" />
+                  <span className="text-[10px] uppercase font-bold text-gray-400">Last System Collection:</span>
+                  <span className="text-[11px] text-gray-900 bg-gray-100 px-2 py-0.5 rounded border font-mono tracking-tight">
+                    15/06/2025, 04:45:12 pm
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 px-3 py-1 rounded-md">
+                  <span className="animate-bounce">🚩</span>
+                  <span className="text-[9px] font-black text-[#0052CC] uppercase tracking-widest">New Ticket Collected</span>
+                </div>
+              </div>
+            </div>
       {/* 2. Table */}
       <div className="flex-1 overflow-auto custom-scrollbar bg-white relative border rounded-lg">
         <table className="min-w-[1540px] text-sm border-collapse"> {/* Increased min-width for new column */}
@@ -366,53 +371,102 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
             </tr>
           </thead>
           <tbody className="bg-white">
-            {filtered.map((item) => (
-              <tr key={item.incident_id} className={`border-b bg-white hover:bg-blue-50/30 transition-colors group ${selectedIds.includes(item.incident_id) ? "bg-blue-50/50" : ""}`}>
-                <td className="px-2 py-3 text-center">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300 text-[#0052CC] focus:ring-[#0052CC]"
-                    checked={selectedIds.includes(item.incident_id)}
-                    onChange={() => toggleRow(item.incident_id)}
-                  />
-                </td>
-                <td className="px-3 py-3 font-medium text-gray-700 truncate max-w-[140px]">{item.incident_id}</td>
-                <td className="px-3 py-3 text-gray-500 truncate max-w-[180px]">{new Date(item.timestamp).toLocaleString()}</td>
-                <td className="px-3 py-3 text-gray-700 truncate max-w-[160px]">{item.customerName}</td>
-                <td className="px-3 py-3 text-gray-700 truncate max-w-[140px]">{item.platform}</td>
-                <td className="px-3 py-3 text-gray-700 font-semibold truncate max-w-[220px]">{item.incidentName}</td>
-                <td className="px-3 py-3 text-gray-500 text-xs max-w-[200px] truncate">{item.description}</td>
-                <td className="px-3 py-3 text-center">
-                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${severityClass[item.severity]}`}>{item.severity}</span>
-                </td>
-                <td className="px-3 py-3 text-center">
-                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${statusClass[item.status] || "bg-gray-100 text-gray-600"}`}>{item.status}</span>
-                </td>
-                <td className="px-3 py-3 text-gray-400 truncate max-w-[140px]">{item.source}</td>
+            {filtered.map((item) => {
+              // Check if ticket is newer than 24 hours
+              const ticketTime = new Date(item.timestamp).getTime();
+              const isNewTicket = (new Date().getTime() - ticketTime) < (24 * 60 * 60 * 1000);
 
-                {/* NEW: Dedicated Action Status Column before the buttons */}
-                <td className="px-3 py-3 text-center">
-                  <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-tight ${actionStatusClass[item.actionStatus || 'New']}`}>
-                    {item.actionStatus || "New"}
-                  </span>
-                </td>
+              return (
+                <tr 
+                  key={item.incident_id} 
+                  className={`border-b bg-white hover:bg-blue-50/30 transition-colors group ${
+                    selectedIds.includes(item.incident_id) ? "bg-blue-50/50" : ""
+                  }`}
+                >
+                  {/* Checkbox Column */}
+                  <td className="px-2 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-[#0052CC] focus:ring-[#0052CC]"
+                      checked={selectedIds.includes(item.incident_id)}
+                      onChange={() => toggleRow(item.incident_id)}
+                    />
+                  </td>
 
-                {/* FIXED: Action Buttons moved to the final column */}
-                <td className="px-3 py-3">
-                  <div className="flex gap-2 justify-center">
-                    <button onClick={() => setViewIncident(item)} className="p-1 hover:bg-blue-100 rounded-md text-blue-600 transition-colors" title="View Details">
-                      <Eye size={16} />
-                    </button>
-                    <button onClick={() => setEditIncident(item)} className="p-1 hover:bg-green-100 rounded-md text-green-600 transition-colors" title="Edit Incident">
-                      <Edit2 size={16} />
-                    </button>
-                    <button onClick={() => setEmailIncident(item)} className="p-1 hover:bg-purple-100 rounded-md text-purple-600 transition-colors" title="Send Notification">
-                      <Mail size={16} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  {/* 1. Incident ID with New Flag Logic */}
+                  <td className="px-3 py-3 font-medium text-gray-700 truncate max-w-[140px] cursor-help" title={item.incident_id}>
+                    <div className="flex items-center gap-2">
+                      {item.incident_id}
+                      {isNewTicket && (
+                        <span className="animate-pulse" title="New Ticket: Collected within 24h">🚩</span>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* 2. Time */}
+                  <td className="px-3 py-3 text-gray-500 truncate max-w-[180px]">
+                    {new Date(item.timestamp).toLocaleString()}
+                  </td>
+
+                  {/* 3. Customer Name */}
+                  <td className="px-3 py-3 text-gray-700 truncate max-w-[160px]">{item.customerName || "--"}</td>
+
+                  {/* 4. Platform */}
+                  <td className="px-3 py-3 text-gray-700 truncate max-w-[140px]">{item.platform}</td>
+
+                  {/* 5. Incident Name */}
+                  <td className="px-3 py-3 text-gray-700 font-semibold truncate max-w-[220px]" title={item.incidentName}>
+                    {item.incidentName}
+                  </td>
+
+                  {/* 6. Description */}
+                  <td className="px-3 py-3 text-gray-500 text-xs max-w-[160px] truncate" title={item.description}>
+                    {item.description}
+                  </td>
+
+                  {/* 7. Severity Badge */}
+                  <td className="px-3 py-3 text-center">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${severityClass[item.severity]}`}>
+                      {item.severity}
+                    </span>
+                  </td>
+
+                  {/* 8. Incident Status Badge */}
+                  <td className="px-3 py-3 text-center">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${statusClass[item.status] || "bg-gray-100 text-gray-600"}`}>
+                      {item.status}
+                    </span>
+                  </td>
+
+                  {/* 9. Source */}
+                  <td className="px-3 py-3 text-gray-400 truncate max-w-[140px]" title={item.source}>
+                    {item.source}
+                  </td>
+
+                  {/* 10. Action Status Badge */}
+                  <td className="px-3 py-3 text-center">
+                    <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-tight ${actionStatusClass[item.actionStatus || 'New']}`}>
+                      {item.actionStatus || "New"}
+                    </span>
+                  </td>
+
+                  {/* Actions Buttons */}
+                  <td className="px-3 py-3">
+                    <div className="flex gap-2 justify-center">
+                      <button onClick={() => setViewIncident(item)} className="p-1 hover:bg-blue-100 rounded-md text-blue-600 transition-colors" title="View Details">
+                        <Eye size={16} />
+                      </button>
+                      <button onClick={() => setEditIncident(item)} className="p-1 hover:bg-green-100 rounded-md text-green-600 transition-colors" title="Edit Incident">
+                        <Edit2 size={16} />
+                      </button>
+                      <button onClick={() => setEmailIncident(item)} className="p-1 hover:bg-purple-100 rounded-md text-purple-600 transition-colors" title="Send Notification">
+                        <Mail size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}   
           </tbody>
         </table>
       </div>
@@ -516,13 +570,19 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
             }}
           />
         )}
-      {emailIncident && (
+     {emailIncident && (
         <EmailReminderModal
           incident={emailIncident}
-          onClose={() => setEmailIncident(null)}
+          // NEW: In bulk mode, this modal triggers executeBulkUpdate
+          isBulkMode={!!pendingBulkAction} 
+          onClose={() => { setEmailIncident(null); setPendingBulkAction(null); }}
           onSend={(data) => {
-            setReminderMessage(`Notification email sent to ${data.to}.`);
-            setEmailIncident(null);
+            if (pendingBulkAction) {
+              executeBulkUpdate(data.message, data.to); // "to" field used as analyst email
+            } else {
+              setReminderMessage(`Notification email sent to ${data.to}.`);
+              setEmailIncident(null);
+            }
           }}
         />
       )}

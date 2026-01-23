@@ -152,7 +152,7 @@ export const ViewIncidentModal: React.FC<any> = ({ incident, onClose, onEdit, on
                       {/* Card Content */}
                       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
                         <h4 className="text-teal-700 font-bold text-xs uppercase tracking-wider mb-4 border-b pb-2">
-                          {event.actionStatus} PROCESS
+                          {event.actionStatus} 
                         </h4>
                         <div className="space-y-3">
                           <p className="text-[10px] font-bold text-gray-400 uppercase">Remark :</p>

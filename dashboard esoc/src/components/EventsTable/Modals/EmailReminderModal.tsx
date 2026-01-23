@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css'; // Import the styles
-import { X, Minus, Maximize2, Minimize2 , Send, ChevronDown, MoreVertical, Trash2, Paperclip, AlertTriangle } from "lucide-react";
+import 'react-quill/dist/quill.snow.css'; 
+import { X, Minus, Maximize2, Minimize2, ChevronDown, MoreVertical, Trash2, Paperclip, AlertTriangle, UserCheck } from "lucide-react";
 
 /* --- Reusable Confirmation Component --- */
 const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }: any) => {
@@ -30,33 +30,43 @@ const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }: any) => 
 interface EmailProps {
   incident: any;
   onClose: () => void;
-  onSend: (data: any) => void;
+  // Updated callback to include CC for Analyst Email
+  onSend: (data: { to: string; cc: string; subject: string; message: string }) => void;
+  isBulkMode?: boolean; // Fixed TypeScript error
 }
 
-export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, onSend }) => {
-  const [showCC, setShowCC] = useState(false);
-  const [to, setTo] = useState("");
-  const [cc, setCc] = useState("");
-  const [subject, setSubject] = useState(`Incident Alert: ${incident.incident_id || incident.id} - ${incident.model_name || incident.incidentName || "Manual Review"}`);
+export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, onSend, isBulkMode }) => {
   const [isMaximized, setIsMaximized] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  
-  // Initial HTML content for the editor
-  const [body, setBody] = useState(`
-    <p>Dear Team,</p>
-    <p>This is a notification regarding the following incident:</p>
-    <ul>
-      <li><strong>ID:</strong> ${incident.incident_id || incident.id}</li>
-      <li><strong>Platform:</strong> ${incident.platform}</li>
-      <li><strong>Severity:</strong> <span style="color: red;">${incident.severity}</span></li>
-    </ul>
-    <p><em>Description:</em> ${incident.description}</p>
-    <br/>
-    <p>Best Regards,<br/><strong>SOC Team</strong></p>
-  `);
 
-  // Quill Toolbar Configuration
+  // Unified State for Form Data
+  const [formData, setFormData] = useState({
+    to: incident?.customerName || "",
+    cc: "", // Specifically used for Analyst Email in Bulk Mode
+    subject: isBulkMode ? "Bulk Status Update Notification" : `Incident Alert: ${incident?.incident_id || incident?.id}`,
+    message: ""
+  });
+
+  // Initialize Body Content
+  useEffect(() => {
+    if (!isBulkMode && incident) {
+      const initialBody = `
+        <p>Dear Team,</p>
+        <p>This is a notification regarding the following incident:</p>
+        <ul>
+          <li><strong>ID:</strong> ${incident.incident_id || incident.id}</li>
+          <li><strong>Platform:</strong> ${incident.platform}</li>
+          <li><strong>Severity:</strong> <span style="color: red;">${incident.severity}</span></li>
+        </ul>
+        <p><em>Description:</em> ${incident.description}</p>
+        <br/>
+        <p>Best Regards,<br/><strong>SOC Team</strong></p>
+      `;
+      setFormData(prev => ({ ...prev, message: initialBody }));
+    }
+  }, [incident, isBulkMode]);
+
   const modules = {
     toolbar: [
       ['bold', 'italic', 'underline', 'strike'],
@@ -65,18 +75,23 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
     ],
   };
 
-  const handleSend = () => {
+  const handleSendTrigger = () => {
+    if (isBulkMode && !formData.cc) {
+      alert("Please enter the Analyst Email performing this bulk update.");
+      return;
+    }
     setShowConfirm(true);
   };
 
   const handleFinalSend = () => {
     setShowConfirm(false);
     setIsSending(true);
+    
+    // Simulate network delay
     setTimeout(() => {
-      onSend({ to, cc, subject, body });
+      onSend(formData); // Send unified data object
       setIsSending(false);
     }, 1000);
-    
   };
 
   return (
@@ -85,112 +100,117 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
       
       <div className={`fixed bg-white shadow-2xl z-[90] flex flex-col border border-gray-300 transition-all duration-300 animate-in slide-in-from-bottom-10 ${
         isMaximized 
-          ? "inset-10 rounded-xl" // Full screen mode
-          : "bottom-0 right-10 w-[600px] h-[550px] rounded-t-xl" // Gmail mode
+          ? "inset-10 rounded-xl" 
+          : "bottom-0 right-10 w-[650px] h-[600px] rounded-t-xl" 
       }`}>
         
-        {/* Gmail Header */}
+        {/* Header */}
         <div className="bg-[#f2f6fc] px-4 py-2 rounded-t-xl flex items-center justify-between border-b">
-          <span className="text-sm font-medium text-[#041e49]">New Message</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-[#041e49]">
+              {isBulkMode ? "Bulk Action Remarks & Audit" : "New Message"}
+            </span>
+            {isBulkMode && (
+              <span className="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-widest">
+                Bulk Mode
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2 text-gray-500">
-            <button className="p-1 hover:bg-gray-200 rounded"><Minus size={16} /></button>
-            <button onClick={() => setIsMaximized(!isMaximized)} className="p-1 hover:bg-gray-200 rounded">{isMaximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</button>
+            <button onClick={() => setIsMaximized(!isMaximized)} className="p-1 hover:bg-gray-200 rounded">
+              {isMaximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            </button>
             <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded text-gray-700"><X size={18} /></button>
           </div>
         </div>
         
         {/* Recipients Area */}
-        <div className="px-4 text-sm">
-          <div className="flex items-center border-b py-2 relative">
-            <span className="text-gray-500 w-12">To</span>
+        <div className="px-4 text-sm bg-white">
+          <div className="flex items-center border-b py-2">
+            <span className="text-gray-500 w-24 font-bold uppercase text-[10px]">Recipient</span>
             <input 
               className="flex-1 outline-none" 
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              placeholder="recipients@example.com"
+              value={formData.to}
+              onChange={(e) => setFormData({...formData, to: e.target.value})}
+              placeholder="customer@example.com"
             />
-            {!showCC && (
-              <button onClick={() => setShowCC(true)} className="text-gray-400 hover:text-blue-600 text-xs px-2">Cc</button>
-            )}
           </div>
 
-          {showCC && (
-            <div className="flex items-center border-b py-2 animate-in fade-in">
-              <span className="text-gray-500 w-12">Cc</span>
-              <input 
-                className="flex-1 outline-none" 
-                value={cc}
-                onChange={(e) => setCc(e.target.value)}
-              />
-            </div>
-          )}
+          <div className="flex items-center border-b py-2 bg-blue-50/30">
+            <span className="text-blue-600 w-24 font-bold uppercase text-[10px] flex items-center gap-1">
+              <UserCheck size={12}/> Analyst
+            </span>
+            <input 
+              className="flex-1 outline-none bg-transparent font-medium" 
+              value={formData.cc}
+              onChange={(e) => setFormData({...formData, cc: e.target.value})}
+              placeholder="Your email (Required for audit trail)"
+              required
+            />
+          </div>
 
           <div className="flex items-center border-b py-2">
+            <span className="text-gray-500 w-24 font-bold uppercase text-[10px]">Subject</span>
             <input 
-              className="w-full outline-none font-medium placeholder-gray-400" 
-              placeholder="Subject"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
+              className="flex-1 outline-none font-medium" 
+              value={formData.subject}
+              onChange={(e) => setFormData({...formData, subject: e.target.value})}
             />
           </div>
         </div>
 
-        {/* RICH TEXT EDITOR AREA */}
-        <div className="flex-1 overflow-y-auto min-h-[300px] quill-container">
+        {/* Editor Area */}
+        <div className="flex-1 overflow-y-auto min-h-[250px] quill-container bg-white">
           <ReactQuill 
             theme="snow" 
-            value={body} 
-            onChange={setBody} 
+            value={formData.message} 
+            onChange={(content) => setFormData({...formData, message: content})} 
             modules={modules}
             className="h-full border-none"
+            placeholder={isBulkMode ? "Enter the shared investigation remark for all selected tickets..." : "Type your message here..."}
           />
         </div>
 
-        {/* Gmail Footer */}
-        <div className="px-4 py-3 border-t flex items-center justify-between bg-white">
+        {/* Footer */}
+        <div className="px-4 py-3 border-t flex items-center justify-between bg-gray-50">
           <div className="flex items-center gap-3">
-            <div className="flex items-center bg-[#0b57d0] hover:bg-[#0842a0] rounded-full overflow-hidden transition-colors shadow-md">
-              <button 
-                onClick={handleSend}
-                disabled={isSending}
-                className={`pl-6 pr-4 py-2 text-white font-medium text-sm border-r border-white/20 flex items-center gap-2 transition-all ${
-                  isSending ? "bg-[#0842a0] cursor-not-allowed" : "bg-[#0b57d0] hover:bg-[#0842a0]"
-                }`}
-              >
-                {isSending ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  "Send"
-                )}
-              </button>
-              <button className="px-2 py-2 text-white hover:bg-white/10 transition-colors">
-                <ChevronDown size={16} />
-              </button>
-            </div>
-            <button className="p-2 hover:bg-gray-100 rounded text-gray-600">
+            <button 
+              onClick={handleSendTrigger}
+              disabled={isSending}
+              className={`px-8 py-2 text-white font-bold text-sm rounded-full flex items-center gap-2 transition-all shadow-md ${
+                isSending ? "bg-gray-400 cursor-not-allowed" : "bg-[#0b57d0] hover:bg-[#0842a0]"
+              }`}
+            >
+              {isSending ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                isBulkMode ? "Apply to Selected" : "Send Notification"
+              )}
+            </button>
+            <button className="p-2 hover:bg-gray-200 rounded text-gray-600">
               <Paperclip size={18} />
             </button>
           </div>
 
-          <div className="flex items-center gap-1 text-gray-500">
-             <button className="p-2 hover:bg-gray-100 rounded"><MoreVertical size={18} /></button>
-             <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded hover:text-red-500"><Trash2 size={18} /></button>
+          <div className="flex items-center gap-1 text-gray-400">
+             <button onClick={onClose} className="p-2 hover:bg-red-50 rounded hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
           </div>
         </div>
       </div>
       
-      {/* 4. CONFIRMATION ALERT MODAL */}
       <ConfirmDialog 
         isOpen={showConfirm}
-        title="Confirm Email Action"
-        message="Are you sure you want to send this notification email to the recipients? This action cannot be undone."
+        title={isBulkMode ? "Confirm Bulk Update" : "Confirm Email Action"}
+        message={isBulkMode 
+          ? "This will update the Action Status and add this remark to the timeline of ALL selected incidents. Proceed?"
+          : "Are you sure you want to send this notification email? This action cannot be undone."}
         onConfirm={handleFinalSend}
         onCancel={() => setShowConfirm(false)}
       />
-      {/* Custom CSS to hide the default Quill border for a Gmail look */}
+
       <style>{`
         .quill-container .ql-toolbar.ql-snow {
           border: none;
@@ -199,7 +219,7 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
         }
         .quill-container .ql-container.ql-snow {
           border: none;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family: inherit;
           font-size: 14px;
         }
       `}</style>

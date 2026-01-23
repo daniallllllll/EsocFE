@@ -12,7 +12,7 @@ export interface EventItem {
   source: string;
   assignedTo?: string;
   remarks?: string;
-  timeline?: TimelineEvent[];
+  timeline?: any[];
 }
 
 export interface TimelineEvent {
