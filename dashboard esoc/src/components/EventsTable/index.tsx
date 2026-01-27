@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useEventTable } from "./useEventTable";
 import { MultiSelectFilter } from "./MultiSelectFilter";
 import { EventItem } from "../../types/event";
 import { 
   ChevronUp, ChevronDown, Layers, Download, Eye, Edit2, Mail, 
-  Check, X, ChevronRight, AlertTriangle, FileText, Clock 
+  Check, X, ChevronRight, FileText, Clock, ChevronLeft 
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -28,7 +28,7 @@ const columns: { key: keyof EventItem; label: string; width: string }[] = [
   { key: "customerName", label: "Customer Name", width: "w-[160px]" },
   { key: "platform", label: "Platform", width: "w-[140px]" },
   { key: "incidentName", label: "Incident Name", width: "w-[220px]" },
-  { key: "description", label: "Description Of Incident", width: "w-[160px]" },
+  { key: "description", label: "Incident Description", width: "w-[160px]" },
   { key: "severity", label: "Severity", width: "w-[120px]" },
   { key: "status", label: "Incident Status", width: "w-[120px]" },
   { key: "source", label: "Source", width: "w-[140px]" },
@@ -85,11 +85,78 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
   
-  // States for Optional Bulk Path
   const [showBulkChoice, setShowBulkChoice] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState<{status: string, ids: string[]} | null>(null);
 
-  /* ===================== EXPORT LOGIC ===================== */
+  /* ===================== PAGINATION STATE ===================== */
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [jumpPage, setJumpPage] = useState(""); // State for Jump to Page
+
+  const totalPages = Math.ceil(filtered.length / rowsPerPage);
+  const indexOfLastRow = currentPage * rowsPerPage;
+  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+  const currentRows = filtered.slice(indexOfFirstRow, indexOfLastRow);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [columnFilters, cardFilter, filtered.length]);
+
+  /* ===================== BULK HANDLERS ===================== */
+
+  const startBulkUpdate = (statusLabel: string) => {
+    if (selectedIds.length === 0) return;
+    setPendingBulkAction({ status: statusLabel, ids: [...selectedIds] });
+    setBulkOpen(false);
+    setShowBulkChoice(true); 
+  };
+
+  const handleQuickUpdate = () => {
+    if (!pendingBulkAction) return;
+    const authUser = JSON.parse(localStorage.getItem("auth_user") || '{"email":"SYSTEM"}');
+    const now = new Date().toLocaleString();
+
+    setLocalData((prev) => prev.map((item) => {
+      if (!pendingBulkAction.ids.includes(item.incident_id)) return item;
+      const newEntry = {
+        actionStatus: pendingBulkAction.status,
+        status: item.status,
+        remark: `Quick status update to ${pendingBulkAction.status} (No remarks).`,
+        actionBy: authUser.email,
+        timestamp: now
+      };
+      return { ...item, actionStatus: pendingBulkAction.status, timeline: [newEntry, ...(item.timeline || [])] };
+    }));
+
+    setReminderMessage(`Quick update applied to ${pendingBulkAction.ids.length} items.`);
+    setSelectedIds([]);
+    setPendingBulkAction(null);
+    setShowBulkChoice(false);
+  };
+
+  const executeBulkUpdate = (remark: string, analystEmail: string) => {
+    if (!pendingBulkAction) return;
+    const now = new Date().toLocaleString();
+
+    setLocalData((prev) => prev.map((item) => {
+      if (!pendingBulkAction.ids.includes(item.incident_id)) return item;
+      const newEntry = {
+        actionStatus: pendingBulkAction.status,
+        status: item.status,
+        remark: remark,
+        actionBy: analystEmail, 
+        timestamp: now
+      };
+      return { ...item, actionStatus: pendingBulkAction.status, timeline: [newEntry, ...(item.timeline || [])] };
+    }));
+    
+    setReminderMessage(`Bulk status updated for ${pendingBulkAction.ids.length} items.`);
+    setSelectedIds([]);
+    setPendingBulkAction(null);
+    setEmailIncident(null);
+  };
+
+  /* ===================== EXPORT & FILTERS ===================== */
 
   const exportToCSV = (dataToExport: EventItem[]) => {
     const headers = columns.map(col => col.label).join(",");
@@ -117,60 +184,6 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
     doc.save(`incident-report-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
-  /* ===================== BULK LOGIC ===================== */
-
-  const startBulkUpdate = (statusLabel: string) => {
-    if (selectedIds.length === 0) return;
-    setPendingBulkAction({ status: statusLabel, ids: [...selectedIds] });
-    setBulkOpen(false);
-    setShowBulkChoice(true); 
-  };
-
-  const handleQuickUpdate = () => {
-    if (!pendingBulkAction) return;
-    const authUser = JSON.parse(localStorage.getItem("auth_user") || '{"email":"SYSTEM"}');
-    const now = new Date().toLocaleString();
-
-    setLocalData((prev) => prev.map((item) => {
-      if (!pendingBulkAction.ids.includes(item.incident_id)) return item;
-      const newEntry = {
-        actionStatus: pendingBulkAction.status,
-        status: item.status,
-        remark: `Quick status update to ${pendingBulkAction.status} (No manual remark).`,
-        actionBy: authUser.email,
-        timestamp: now
-      };
-      return { ...item, actionStatus: pendingBulkAction.status, timeline: [newEntry, ...(item.timeline || [])] };
-    }));
-
-    setReminderMessage(`Quick status updated for ${pendingBulkAction.ids.length} items.`);
-    setSelectedIds([]);
-    setPendingBulkAction(null);
-    setShowBulkChoice(false);
-  };
-
-  const executeBulkUpdate = (remark: string, analystEmail: string) => {
-    if (!pendingBulkAction) return;
-    const now = new Date().toLocaleString();
-
-    setLocalData((prev) => prev.map((item) => {
-      if (!pendingBulkAction.ids.includes(item.incident_id)) return item;
-      const newEntry = {
-        actionStatus: pendingBulkAction.status,
-        status: item.status,
-        remark: remark,
-        actionBy: analystEmail, 
-        timestamp: now
-      };
-      return { ...item, actionStatus: pendingBulkAction.status, timeline: [newEntry, ...(item.timeline || [])] };
-    }));
-    
-    setReminderMessage(`Bulk status updated with audit log for ${pendingBulkAction.ids.length} items.`);
-    setSelectedIds([]);
-    setPendingBulkAction(null);
-    setEmailIncident(null);
-  };
-
   const getOptions = (key: keyof EventItem) => {
     const allValues = localData.map((item) => key === "timestamp" ? new Date(String(item[key])).toLocaleString() : String(item[key] || ""));
     return Array.from(new Set(allValues)).filter(Boolean).sort();
@@ -179,7 +192,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
   return (
     <div className="bg-white rounded-xl shadow p-4 flex flex-col h-[calc(100vh-220px)] overflow-visible">
       
-      {/* 1. Header Actions */}
+      {/* 1. Header Actions Area */}
       <div className="flex items-center justify-between mb-6 z-50 overflow-visible">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -204,19 +217,28 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
               <ChevronDown size={14} />
             </button>
             {isExportOpen && (
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white border rounded-lg shadow-xl z-[100] overflow-hidden animate-in fade-in zoom-in-95">
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white border rounded-lg shadow-xl z-[100] overflow-hidden">
                 <button onClick={() => { exportToCSV(selectedIds.length > 0 ? filtered.filter(e => selectedIds.includes(e.incident_id)) : filtered); setIsExportOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b">
-                   <FileText size={16} className="text-green-600" /> Export CSV
+                    <FileText size={16} className="text-green-600" /> Export CSV
                 </button>
                 <button onClick={() => { exportToPDF(selectedIds.length > 0 ? filtered.filter(e => selectedIds.includes(e.incident_id)) : filtered); setIsExportOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
-                   <FileText size={16} className="text-red-600" /> Export PDF
+                    <FileText size={16} className="text-red-600" /> Export PDF
                 </button>
               </div>
             )}
           </div>
+
+          {Object.values(columnFilters).some(val => val && val.length > 0) && (
+            <button 
+              onClick={() => { setColumnFilters({}); }} 
+              className="flex items-center gap-2 bg-gray-50 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-100 transition-all border border-gray-200 animate-in fade-in zoom-in duration-200"
+            >
+              <X size={16} className="text-red-500" />
+              <span>Reset All Filters</span>
+            </button>
+          )}
         </div>
 
-        {/* Right Side Info */}
         <div className="flex flex-col items-end gap-1">
           <div className="flex items-center gap-2 text-gray-500 font-medium">
             <Clock size={12} className="text-[#0052CC]" />
@@ -230,14 +252,13 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         </div>
       </div>
 
-      {/* 2. Main Table Area */}
-      <div className="flex-1 overflow-auto bg-white relative border rounded-lg">
+      <div className="flex-1 overflow-auto bg-white relative border-2 border-gray-300 rounded-lg shadow-md">
         <table className="min-w-[1540px] text-sm border-collapse">
           <thead className="sticky top-0 z-40 bg-white shadow-sm">
             <tr className="bg-white">
-              <th className="px-2 py-3 w-10 border-b text-center"><input type="checkbox" checked={filtered.length > 0 && selectedIds.length === filtered.length} onChange={toggleAll} /></th>
+              <th className="px-2 py-3 w-10 border-b-2 border-gray-300 text-center"><input type="checkbox" checked={filtered.length > 0 && selectedIds.length === filtered.length} onChange={toggleAll} /></th>
               {columns.map((col) => (
-                <th key={col.key} className={`px-3 py-2 align-top border-b ${col.width}`}>
+                <th key={col.key} className={`px-3 py-2 align-top border-b-2 border-gray-300 ${col.width}`}>
                   <div className="flex items-center justify-between font-semibold mb-2 cursor-pointer text-gray-600" onClick={() => { if (sortKey === col.key) setSortAsc(!sortAsc); else { setSortKey(col.key); setSortAsc(true); } }}>
                     {col.label}
                     <div className="flex flex-col leading-none text-gray-300">
@@ -245,17 +266,17 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
                       <ChevronDown size={10} className={sortKey === col.key && !sortAsc ? "text-gray-700" : ""} />
                     </div>
                   </div>
-                  <MultiSelectFilter label={col.label} options={getOptions(col.key)} selected={columnFilters[col.key] || []} onChange={(vals) => setColumnFilters((prev) => ({ ...prev, [col.key]: vals }))} />
+                  <MultiSelectFilter label={col.label} options={getOptions(col.key)} selected={columnFilters[col.key] || []} onChange={(vals: string[]) => { setColumnFilters((prev) => { const newFilters = { ...prev, [col.key]: vals }; if (vals.length === 0) delete newFilters[col.key]; return newFilters; }); }} />
                 </th>
               ))}
-              <th className="px-3 py-2 text-gray-600 border-b w-[120px] text-center">Actions</th>
+              <th className="px-3 py-2 text-gray-600 border-b-2 border-gray-300 w-[120px] text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((item) => {
+            {currentRows.map((item) => {
               const isNewTicket = (new Date().getTime() - new Date(item.timestamp).getTime()) < (24 * 60 * 60 * 1000);
               return (
-                <tr key={item.incident_id} className={`border-b hover:bg-blue-50/30 transition-colors ${selectedIds.includes(item.incident_id) ? "bg-blue-50/50" : ""}`}>
+                <tr key={item.incident_id} className={`border-b border-gray-200 hover:bg-blue-50/30 transition-colors ${selectedIds.includes(item.incident_id) ? "bg-blue-50/50" : ""}`}>
                   <td className="px-2 py-3 text-center"><input type="checkbox" checked={selectedIds.includes(item.incident_id)} onChange={() => toggleRow(item.incident_id)} /></td>
                   <td className="px-3 py-3 font-medium text-gray-700 truncate max-w-[140px]" title={item.incident_id}>
                     <div className="flex items-center gap-2">
@@ -286,7 +307,64 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         </table>
       </div>
 
-      {/* Choice Modal */}
+      {/* 3. Smart Pagination Area */}
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t rounded-b-xl">
+        <div className="flex items-center gap-6 text-xs font-bold text-gray-500 uppercase tracking-wider">
+          <div className="flex items-center gap-2">
+            <span>Rows per page:</span>
+            <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="bg-white border rounded px-1 py-0.5 outline-none focus:border-blue-500">
+              {[10, 25, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
+            </select>
+          </div>
+
+          {/* JUMP TO PAGE INPUT */}
+          <div className="flex items-center gap-2">
+            <span>Jump to:</span>
+            <input 
+              type="text" 
+              placeholder="Page#"
+              value={jumpPage}
+              onChange={(e) => setJumpPage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const val = parseInt(jumpPage);
+                  if (!isNaN(val) && val > 0 && val <= totalPages) {
+                    setCurrentPage(val);
+                    setJumpPage("");
+                  }
+                }
+              }}
+              className="bg-white border rounded px-2 py-0.5 w-16 text-center focus:border-blue-500 outline-none placeholder:font-normal placeholder:lowercase"
+            />
+          </div>
+
+          <span>Showing {indexOfFirstRow + 1} to {Math.min(indexOfLastRow, filtered.length)} of {filtered.length}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)} className="p-1.5 rounded-md border bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors">
+            <ChevronLeft size={18} className="text-gray-600" />
+          </button>
+          <div className="flex items-center gap-1">
+            {(() => {
+              const pages = [];
+              const delta = 1; 
+              for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+                  pages.push(<button key={i} onClick={() => setCurrentPage(i)} className={`w-8 h-8 rounded-md text-xs font-bold transition-all ${currentPage === i ? "bg-[#0052CC] text-white shadow-md" : "bg-white border text-gray-600 hover:bg-gray-50"}`}>{i}</button>);
+                } else if ((i === currentPage - delta - 1 && i > 1) || (i === currentPage + delta + 1 && i < totalPages)) {
+                  pages.push(<span key={i} className="px-1 text-gray-400 font-bold">...</span>);
+                }
+              }
+              return pages;
+            })()}
+          </div>
+          <button disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(prev => prev + 1)} className="p-1.5 rounded-md border bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors">
+            <ChevronRight size={18} className="text-gray-600" />
+          </button>
+        </div>
+      </div>
+
       {showBulkChoice && (
         <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center animate-in fade-in duration-200">
           <div className="bg-white rounded-xl shadow-2xl w-[450px] overflow-hidden animate-in zoom-in duration-200">
@@ -312,21 +390,9 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         </div>
       )}
 
-      {/* Modals and Toasts */}
       {viewIncident && <ViewIncidentModal incident={viewIncident} onClose={() => setViewIncident(null)} onEdit={(inc) => { setEditIncident(inc); setViewIncident(null); }} onNotify={(inc) => { setEmailIncident(inc); setViewIncident(null); }} />}
       {editIncident && <EditIncidentModal incident={editIncident} onClose={() => setEditIncident(null)} onSave={() => {}} />}
-      {emailIncident && (
-        <EmailReminderModal
-          incident={emailIncident}
-          isBulkMode={!!pendingBulkAction} 
-          onClose={() => { setEmailIncident(null); setPendingBulkAction(null); }}
-          onSend={(data) => {
-            if (pendingBulkAction) executeBulkUpdate(data.message, data.cc); // Shared audit remark & analyst email
-            else setEmailIncident(null);
-          }}
-        />
-      )}
-
+      {emailIncident && <EmailReminderModal incident={emailIncident} isBulkMode={!!pendingBulkAction} onClose={() => { setEmailIncident(null); setPendingBulkAction(null); }} onSend={(data) => { if (pendingBulkAction) executeBulkUpdate(data.message, data.cc); else { setReminderMessage(`Email sent to ${data.to}.`); setEmailIncident(null); } }} />}
       {reminderMessage && (
         <div className="fixed bottom-6 right-6 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-2xl z-[100] flex items-center gap-3 animate-in fade-in slide-in-from-right-4">
           <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
