@@ -127,7 +127,7 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
         {/* Recipients Area */}
         <div className="px-4 text-sm bg-white">
           <div className="flex items-center border-b py-2">
-            <span className="text-gray-500 w-24 font-bold uppercase text-[10px]">Recipient</span>
+            <span className="text-gray-500 w-24 font-bold uppercase text-[10px]">To</span>
             <input 
               className="flex-1 outline-none" 
               value={formData.to}

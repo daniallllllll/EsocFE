@@ -1,0 +1,376 @@
+  Sample event
+
+
+{
+    incident_id: "WB-21900-20260126-00042",
+    timestamp: "2026-01-26T02:15:00Z", // Collected recently (Last 24h)
+    platform: "Trend Micro",
+    severity: "High",
+    status: "Open",
+    actionStatus: "New",
+    incidentName: "Ransomware-Linked File Activity",
+    description: "Multiple files encrypted in 'C:/Users/Shared/Documents' with known extension .crypt.",
+    source: "FS-PROD-01 • admin-svc@company.com",
+    customerName: "Acme Corp",
+    timeline: [
+      {
+        actionStatus: "New",
+        status: "Open",
+        remark: "System automatically collected and ingested incident from Trend Micro API.",
+        actionBy: "SYSTEM-COLLECTOR",
+        timestamp: "2026-01-26T02:15:00Z"
+      }
+    ]
+  },
+  {
+    incident_id: "245",
+    timestamp: "2026-01-25T14:22:11Z",
+    platform: "Cortex",
+    severity: "Critical",
+    status: "Under Investigation",
+    actionStatus: "In Progress",
+    incidentName: "LSASS Memory Dump",
+    description: "Unauthorized process 'unknown.exe' attempted to read memory from LSASS. Possible credential harvesting.",
+    source: "CEO-LAPTOP • victor@company.com",
+    customerName: "Gamma LLC",
+    timeline: [
+      {
+        actionStatus: "In Progress",
+        status: "Under Investigation",
+        remark: "Confirmed anomalous process execution. Memory dump prevented by EDR. Requesting full disk scan.",
+        actionBy: "analyst-02@esoc.com",
+        timestamp: "2026-01-25T15:30:00Z"
+      },
+      {
+        actionStatus: "New",
+        status: "New",
+        remark: "System automatically collected and ingested incident from Cortex API.",
+        actionBy: "SYSTEM-COLLECTOR",
+        timestamp: "2026-01-25T14:22:11Z"
+      }
+    ]
+  },
+  {
+    incident_id: "QR-992104",
+    timestamp: "2026-01-24T08:05:44Z",
+    platform: "QRadar",
+    severity: "Medium",
+    status: "Closed",
+    actionStatus: "Closed",
+    incidentName: "Multiple SSH Login Failures",
+    description: "Over 50 failed SSH login attempts detected within 2 minutes from 192.168.1.50.",
+    source: "Linux-Srv-05",
+    customerName: "Beta Inc",
+    timeline: [
+      {
+        actionStatus: "Closed",
+        status: "Closed",
+        remark: "Confirmed routine maintenance activity by internal admin. IP whitelisted for maintenance window.",
+        actionBy: "admin@test.com",
+        timestamp: "2026-01-24T10:15:00Z"
+      },
+      {
+        actionStatus: "New",
+        status: "Open",
+        remark: "System automatically collected and ingested incident from QRadar API.",
+        actionBy: "SYSTEM-COLLECTOR",
+        timestamp: "2026-01-24T08:05:44Z"
+      }
+    ]
+  },
+  {
+    incident_id: "142",
+    timestamp: "2026-01-23T22:10:12Z",
+    platform: "Cortex",
+    severity: "Low",
+    status: "Resolved Other",
+    actionStatus: "Resolved",
+    incidentName: "Potentially Unwanted Program (PUP)",
+    description: "Adware-linked browser extension detected and removed.",
+    source: "HR-PC-12 • sarah@company.com",
+    customerName: "TMONE",
+    timeline: [
+      {
+        actionStatus: "Resolved",
+        status: "Resolved Other",
+        remark: "User education provided. Extension removed by automated policy.",
+        actionBy: "analyst-01@esoc.com",
+        timestamp: "2026-01-23T23:45:00Z"
+      },
+      {
+        actionStatus: "New",
+        status: "New",
+        remark: "System automatically collected and ingested incident from Cortex API.",
+        actionBy: "SYSTEM-COLLECTOR",
+        timestamp: "2026-01-23T22:10:12Z"
+      }
+    ]
+  },
+  {
+    incident_id: "WB-22011-20260122-00003",
+    timestamp: "2026-01-22T05:30:19Z",
+    platform: "Trend Micro",
+    severity: "High",
+    status: "Open",
+    actionStatus: "In Progress",
+    incidentName: "Lateral Movement via PowerShell",
+    description: "Suspicious PowerShell script execution connecting to multiple internal IPC$ shares.",
+    source: "SQL-DB-CLUST-A",
+    customerName: "Felcra",
+    timeline: [
+      {
+        actionStatus: "In Progress",
+        status: "Open",
+        remark: "Reviewing script logs. SQL server accounts temporarily locked as a precaution.",
+        actionBy: "analyst-02@esoc.com",
+        timestamp: "2026-01-22T06:20:00Z"
+      },
+      {
+        actionStatus: "New",
+        status: "Open",
+        remark: "System automatically collected and ingested incident from Trend Micro API.",
+        actionBy: "SYSTEM-COLLECTOR",
+        timestamp: "2026-01-22T05:30:19Z"
+      }
+    ]
+  },
+  {
+    incident_id: "QR-887123",
+    timestamp: "2026-01-21T18:45:12Z",
+    platform: "QRadar",
+    severity: "Medium",
+    status: "Open",
+    actionStatus: "New",
+    incidentName: "Exfiltration to Unknown Cloud Storage",
+    description: "Large outbound data transfer (4GB) to an uncategorized IP address in Russia.",
+    source: "DESKTOP-542 • mark-sales@company.com",
+    customerName: "YPPB",
+    timeline: [
+      {
+        actionStatus: "New",
+        status: "Open",
+        remark: "System automatically collected and ingested incident from QRadar API.",
+        actionBy: "SYSTEM-COLLECTOR",
+        timestamp: "2026-01-21T18:45:12Z"
+      }
+    ]
+  },
+ 
+  {
+    incident_id: "WB-22105-20260127-00001",
+    timestamp: "2026-01-27T08:15:00Z", // Very Recent (Flags 🚩)
+    platform: "Trend Micro",
+    severity: "Critical",
+    status: "Open",
+    actionStatus: "New",
+    incidentName: "Massive Data Exfiltration Detected",
+    description: "Unusual outbound traffic (12GB) to a known malicious IP range in Eastern Europe via port 443.",
+    source: "FILE-SRV-CORE • srv_admin@company.com",
+    customerName: "Acme Corp",
+    timeline: [
+      {
+        actionStatus: "New",
+        status: "Open",
+        remark: "System automatically collected and ingested incident from Trend Micro API.",
+        actionBy: "SYSTEM-COLLECTOR",
+        timestamp: "2026-01-27T08:15:00Z"
+      }
+    ]
+  },
+  {
+    incident_id: "289",
+    timestamp: "2026-01-26T22:45:11Z", // Recent (Flags 🚩)
+    platform: "Cortex",
+    severity: "High",
+    status: "Under Investigation",
+    actionStatus: "In Progress",
+    incidentName: "Credential Dumping Attempt",
+    description: "Mimikatz-like activity detected. Unauthorized access to SAM and LSASS memory space.",
+    source: "FINANCE-WKSTN-04",
+    customerName: "TMONE",
+    timeline: [
+      {
+        actionStatus: "In Progress",
+        status: "Under Investigation",
+        remark: "Host isolated. Analyst checking for persistence in Scheduled Tasks and Registry keys.",
+        actionBy: "danial@esoc.com",
+        timestamp: "2026-01-27T02:00:00Z"
+      },
+      {
+        actionStatus: "New",
+        status: "New",
+        remark: "System automatically collected and ingested incident from Cortex API.",
+        actionBy: "SYSTEM-COLLECTOR",
+        timestamp: "2026-01-26T22:45:11Z"
+      }
+    ]
+  },
+  {
+    incident_id: "QR-100293",
+    timestamp: "2026-01-25T10:00:00Z",
+    platform: "QRadar",
+    severity: "Medium",
+    status: "Closed",
+    actionStatus: "Closed",
+    incidentName: "Policy Violation: P2P Software",
+    description: "BitTorrent protocol traffic detected from a workstation in the Marketing department.",
+    source: "10.50.12.88 • mkt-user@company.com",
+    customerName: "Beta Inc",
+    timeline: [
+      {
+        actionStatus: "Closed",
+        status: "Closed",
+        remark: "User notified and software removed. Manager informed of policy violation.",
+        actionBy: "analyst-admin@test.com",
+        timestamp: "2026-01-25T14:30:00Z"
+      }
+    ]
+  },
+  {
+    incident_id: "156",
+    timestamp: "2026-01-24T18:20:00Z",
+    platform: "Cortex",
+    severity: "Low",
+    status: "Resolved False Positive",
+    actionStatus: "Resolved",
+    incidentName: "Anomalous Admin Login",
+    description: "Successful login from a new geographical location (Singapore) for user 'admin_jt'.",
+    source: "Cloud-Console-Global",
+    customerName: "Gamma LLC",
+    timeline: [
+      {
+        actionStatus: "Resolved",
+        status: "Resolved False Positive",
+        remark: "Confirmed with user. Legitimate travel for regional audit. No further action needed.",
+        actionBy: "danial@esoc.com",
+        timestamp: "2026-01-24T19:00:00Z"
+      }
+    ]
+  },
+  {
+    incident_id: "WB-21444-20260123-00099",
+    timestamp: "2026-01-23T04:12:33Z",
+    platform: "Trend Micro",
+    severity: "Medium",
+    status: "Open",
+    actionStatus: "New",
+    incidentName: "Phishing Link Clicked",
+    description: "User navigated to a known phishing domain 'bank-secure-update.net' from a company email.",
+    source: "SALES-PC-01 • mark@company.com",
+    customerName: "YPPB",
+    timeline: [
+      {
+        actionStatus: "New",
+        status: "Open",
+        remark: "System automatically collected and ingested incident from Trend Micro API.",
+        actionBy: "SYSTEM-COLLECTOR",
+        timestamp: "2026-01-23T04:12:33Z"
+      }
+    ]
+  },
+  {
+    incident_id: "302",
+    timestamp: "2026-01-22T15:55:00Z",
+    platform: "Cortex",
+    severity: "Critical",
+    status: "Resolved True Positive",
+    actionStatus: "Resolved",
+    incidentName: "Cobalt Strike Beacon",
+    description: "Detection of Cobalt Strike C2 communication pattern over HTTPS.",
+    source: "WEB-SRV-DMZ",
+    customerName: "Felcra",
+    timeline: [
+      {
+        actionStatus: "Resolved",
+        status: "Resolved True Positive",
+        remark: "Full remediation completed. Compromised service account password rotated and server patched.",
+        actionBy: "analyst-lead@esoc.com",
+        timestamp: "2026-01-23T11:00:00Z"
+      }
+    ]
+  },
+  {
+    incident_id: "QR-990012",
+    timestamp: "2026-01-21T09:10:45Z",
+    platform: "QRadar",
+    severity: "High",
+    status: "Open",
+    actionStatus: "In Progress",
+    incidentName: "Brute Force Success - VPN",
+    description: "1,200 failed attempts followed by one successful login for user 'vpntest' from 203.0.113.5.",
+    source: "VPN-Gateway-HQ",
+    customerName: "Acme Corp",
+    timeline: [
+      {
+        actionStatus: "In Progress",
+        status: "Open",
+        remark: "VPN account disabled. Resetting MFA for affected user. Investigating session logs.",
+        actionBy: "analyst-02@esoc.com",
+        timestamp: "2026-01-21T10:05:00Z"
+      }
+    ]
+  },
+  {
+    incident_id: "315",
+    timestamp: "2026-01-20T23:30:12Z",
+    platform: "Cortex",
+    severity: "Medium",
+    status: "New",
+    actionStatus: "New",
+    incidentName: "Suspicious DLL Load",
+    description: "Microsoft Word attempted to load an unsigned DLL from a non-standard directory.",
+    source: "LEGAL-WKSTN-02",
+    customerName: "TMONE",
+    timeline: [
+      {
+        actionStatus: "New",
+        status: "New",
+        remark: "System automatically collected and ingested incident from Cortex API.",
+        actionBy: "SYSTEM-COLLECTOR",
+        timestamp: "2026-01-20T23:30:12Z"
+      }
+    ]
+  },
+  {
+    incident_id: "WB-21300-20260119-00512",
+    timestamp: "2026-01-19T13:05:22Z",
+    platform: "Trend Micro",
+    severity: "Low",
+    status: "Closed",
+    actionStatus: "Closed",
+    incidentName: "Unauthorized USB Device",
+    description: "USB Mass Storage device plugged into restricted endpoint.",
+    source: "R&D-LAB-01",
+    customerName: "Gamma LLC",
+    timeline: [
+      {
+        actionStatus: "Closed",
+        status: "Closed",
+        remark: "Verified as authorized external drive for data transfer. Policy exception granted.",
+        actionBy: "admin@test.com",
+        timestamp: "2026-01-19T14:45:00Z"
+      }
+    ]
+  },
+  {
+    incident_id: "QR-110567",
+    timestamp: "2026-01-18T05:22:18Z",
+    platform: "QRadar",
+    severity: "Critical",
+    status: "Open",
+    actionStatus: "In Progress",
+    incidentName: "SQL Injection Attempt - Success",
+    description: "Web application firewall bypassed. Anomalous SQL queries detected on back-end database.",
+    source: "Public-Web-App • 10.10.1.5",
+    customerName: "Beta Inc",
+    timeline: [
+      {
+        actionStatus: "In Progress",
+        status: "Open",
+        remark: "Database in read-only mode. Analyzing table corruption and unauthorized data access.",
+        actionBy: "analyst-lead@esoc.com",
+        timestamp: "2026-01-18T06:30:00Z"
+      }
+    ]
+  }
+];
