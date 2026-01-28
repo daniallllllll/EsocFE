@@ -28,11 +28,11 @@ const columns: { key: keyof EventItem; label: string; width: string }[] = [
   { key: "customerName", label: "Customer Name", width: "w-[160px]" },
   { key: "platform", label: "Platform", width: "w-[140px]" },
   { key: "incidentName", label: "Incident Name", width: "w-[220px]" },
-  { key: "description", label: "Incident Description", width: "w-[160px]" },
+  { key: "description", label: "Incident Description", width: "w-[180px]" },
   { key: "severity", label: "Severity", width: "w-[120px]" },
   { key: "status", label: "Incident Status", width: "w-[120px]" },
-  { key: "source", label: "Source", width: "w-[140px]" },
-  { key: "actionStatus", label: "Action Status", width: "w-[100px]" },
+  { key: "source", label: "Source", width: "w-[160px]" },
+  { key: "actionStatus", label: "Action Status", width: "w-[120px]" },
 ];
 
 const severityClass: Record<string, string> = {
@@ -88,7 +88,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
   const [showBulkChoice, setShowBulkChoice] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState<{status: string, ids: string[]} | null>(null);
 
-  /* ===================== PAGINATION STATE ===================== */
+  /* PAGINATION STATE */
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [jumpPage, setJumpPage] = useState("");
@@ -102,10 +102,19 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
     setCurrentPage(1);
   }, [columnFilters, cardFilter, filtered.length]);
 
-  /* ===================== HANDLERS ===================== */
+  /* ===================== RESTORED: START BULK UPDATE ===================== */
+  const startBulkUpdate = (statusLabel: string) => {
+    if (selectedIds.length === 0) return;
+    setPendingBulkAction({ status: statusLabel, ids: [...selectedIds] });
+    setBulkOpen(false);
+    setShowBulkChoice(true); 
+  };
+
   const handleQuickUpdate = () => {
     if (!pendingBulkAction) return;
     const authUser = JSON.parse(localStorage.getItem("auth_user") || '{"email":"SYSTEM"}');
+    const now = new Date().toLocaleString();
+
     setLocalData((prev) => prev.map((item) => {
       if (!pendingBulkAction.ids.includes(item.incident_id)) return item;
       const newEntry = {
@@ -113,11 +122,12 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         status: item.status,
         remark: `Quick status update to ${pendingBulkAction.status}.`,
         actionBy: authUser.email,
-        timestamp: new Date().toLocaleString()
+        timestamp: now
       };
       return { ...item, actionStatus: pendingBulkAction.status, timeline: [newEntry, ...(item.timeline || [])] };
     }));
-    setReminderMessage(`Quick update applied.`);
+
+    setReminderMessage(`Quick update applied to ${pendingBulkAction.ids.length} items.`);
     setSelectedIds([]);
     setPendingBulkAction(null);
     setShowBulkChoice(false);
@@ -125,6 +135,8 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
 
   const executeBulkUpdate = (remark: string, analystEmail: string) => {
     if (!pendingBulkAction) return;
+    const now = new Date().toLocaleString();
+
     setLocalData((prev) => prev.map((item) => {
       if (!pendingBulkAction.ids.includes(item.incident_id)) return item;
       const newEntry = {
@@ -132,16 +144,18 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         status: item.status,
         remark: remark,
         actionBy: analystEmail, 
-        timestamp: new Date().toLocaleString()
+        timestamp: now
       };
       return { ...item, actionStatus: pendingBulkAction.status, timeline: [newEntry, ...(item.timeline || [])] };
     }));
+    
     setReminderMessage(`Bulk status updated.`);
     setSelectedIds([]);
     setPendingBulkAction(null);
     setEmailIncident(null);
   };
 
+  /* ===================== EXPORT & HELPERS ===================== */
   const exportToCSV = (dataToExport: EventItem[]) => {
     const headers = columns.map(col => col.label).join(",");
     const rows = dataToExport.map(e => columns.map(col => `"${String(e[col.key] ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -152,19 +166,6 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
     link.href = url;
     link.download = `incident-report.csv`;
     link.click();
-  };
-
-  const exportToPDF = (dataToExport: EventItem[]) => {
-    const doc = new jsPDF("l", "mm", "a4");
-    autoTable(doc, {
-      startY: 35,
-      head: [["ID", "Time", "Customer", "Incident Name", "Severity", "Inc. Status", "Action Status"]],
-      body: dataToExport.map(item => [item.incident_id, new Date(item.timestamp).toLocaleString(), item.customerName || "--", item.incidentName, item.severity, item.status, item.actionStatus || "New"]),
-      theme: "striped",
-      headStyles: { fillColor: [0, 82, 204] },
-      styles: { fontSize: 8 }
-    });
-    doc.save(`incident-report.pdf`);
   };
 
   const getOptions = (key: keyof EventItem) => {
@@ -179,15 +180,16 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
       <div className="flex items-center justify-between mb-6 shrink-0 z-50 overflow-visible">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <button onClick={() => setBulkOpen(!bulkOpen)} className="flex items-center gap-2 bg-[#0052CC] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-opacity-90 shadow-sm transition">
+            <button onClick={() => setBulkOpen(!bulkOpen)} className="flex items-center gap-2 bg-[#0052CC] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-opacity-90 transition">
               <Layers className="h-4 w-4" />
               <span>Bulk Action Status</span>
               <ChevronDown size={14} className={bulkOpen ? "rotate-180" : ""} />
             </button>
             {bulkOpen && (
               <div className="absolute left-0 mt-2 w-72 bg-white border rounded-lg shadow-xl z-[100] py-1 animate-in zoom-in duration-100">
+                <div className="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50">Set Action Status</div>
                 {["New", "In Progress", "Resolved", "Closed"].map(s => (
-                  <button key={s} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => { setPendingBulkAction({ status: s, ids: [...selectedIds] }); setBulkOpen(false); setShowBulkChoice(true); }}>{s}</button>
+                  <button key={s} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100" onClick={() => startBulkUpdate(s)}>{s}</button>
                 ))}
               </div>
             )}
@@ -201,13 +203,12 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
             {isExportOpen && (
               <div className="absolute top-full left-0 mt-2 w-48 bg-white border rounded-lg shadow-xl z-[100] overflow-hidden">
                 <button onClick={() => { exportToCSV(selectedIds.length > 0 ? filtered.filter(e => selectedIds.includes(e.incident_id)) : filtered); setIsExportOpen(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 border-b">Export CSV</button>
-                <button onClick={() => { exportToPDF(selectedIds.length > 0 ? filtered.filter(e => selectedIds.includes(e.incident_id)) : filtered); setIsExportOpen(false); }} className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50">Export PDF</button>
               </div>
             )}
           </div>
 
           {Object.values(columnFilters).some(val => val && val.length > 0) && (
-            <button onClick={() => { setColumnFilters({}); }} className="flex items-center gap-2 bg-gray-50 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-100 border-2 border-gray-200 animate-in zoom-in">
+            <button onClick={() => { setColumnFilters({}); }} className="flex items-center gap-2 bg-gray-50 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold border-2 border-gray-200 animate-in zoom-in">
               <X size={16} className="text-red-500" />
               <span>Reset All Filters</span>
             </button>
@@ -226,78 +227,80 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
         </div>
       </div>
 
-        {/* 2. Main Table Area - Fixed Width Logic */}
-        <div className="flex-1 overflow-auto bg-white relative border-2 border-gray-300 rounded-t-lg shadow-md">
-          {/* Added 'table-fixed' and ensured consistent 'min-w' to prevent shrinking */}
-          <table className="w-full min-w-[1600px] table-fixed text-sm border-collapse">
-            <thead className="sticky top-0 z-40 bg-white shadow-sm">
-              <tr className="bg-white">
-                {/* Enforce specific width on the checkbox column */}
-                <th className="w-[50px] px-2 py-3 border-b-2 border-gray-300 text-center">
-                  <input type="checkbox" checked={filtered.length > 0 && selectedIds.length === filtered.length} onChange={toggleAll} />
-                </th>
-                
-                {columns.map((col) => (
-                  <th 
-                    key={col.key} 
-                    // Width is explicitly pulled from your columns definition to maintain stability
-                    className={`${col.width} px-3 py-2 align-top border-b-2 border-gray-300 text-left`}
-                  >
-                    <div className="flex items-center justify-between font-bold mb-2 cursor-pointer text-gray-700" onClick={() => { if (sortKey === col.key) setSortAsc(!sortAsc); else { setSortKey(col.key); setSortAsc(true); } }}>
-                      <span className="truncate">{col.label}</span>
-                      <div className="flex flex-col leading-none text-gray-300">
-                        <ChevronUp size={10} className={sortKey === col.key && sortAsc ? "text-gray-700" : ""} />
-                        <ChevronDown size={10} className={sortKey === col.key && !sortAsc ? "text-gray-700" : ""} />
-                      </div>
+      {/* 2. Main Table Area - Pinned scrollable area */}
+      <div className="flex-1 overflow-auto bg-white relative border-2 border-gray-300 rounded-t-lg shadow-md">
+        <table className="w-full min-w-[1600px] table-fixed text-sm border-collapse">
+          <thead className="sticky top-0 z-40 bg-white shadow-sm">
+            <tr className="bg-white">
+              <th className="w-[50px] px-2 py-3 border-b-2 border-gray-300 text-center"><input type="checkbox" checked={filtered.length > 0 && selectedIds.length === filtered.length} onChange={toggleAll} /></th>
+              {columns.map((col) => (
+                <th key={col.key} className={`${col.width} px-3 py-2 align-top border-b-2 border-gray-300 text-left`}>
+                  <div className="flex items-center justify-between font-bold mb-2 cursor-pointer text-gray-700 uppercase text-[11px]" onClick={() => { if (sortKey === col.key) setSortAsc(!sortAsc); else { setSortKey(col.key); setSortAsc(true); } }}>
+                    <span className="truncate">{col.label}</span>
+                    <div className="flex flex-col leading-none text-gray-300">
+                      <ChevronUp size={10} className={sortKey === col.key && sortAsc ? "text-gray-700" : ""} />
+                      <ChevronDown size={10} className={sortKey === col.key && !sortAsc ? "text-gray-700" : ""} />
                     </div>
-                    <MultiSelectFilter label={col.label} options={getOptions(col.key)} selected={columnFilters[col.key] || []} onChange={(vals: string[]) => { setColumnFilters((prev) => { const newFilters = { ...prev, [col.key]: vals }; if (vals.length === 0) delete newFilters[col.key]; return newFilters; }); }} />
-                  </th>
-                ))}
-                
-                {/* Enforce fixed width on the Actions column */}
-                <th className="w-[120px] px-3 py-2 text-gray-600 border-b-2 border-gray-300 text-center uppercase text-[10px] font-black">Actions</th>
-              </tr>
-            </thead>
-            
-            <tbody className="divide-y divide-gray-200">
-              {currentRows.map((item) => {
-                const isNewTicket = (new Date().getTime() - new Date(item.timestamp).getTime()) < (24 * 60 * 60 * 1000);
-                return (
-                  <tr key={item.incident_id} className={`hover:bg-blue-50/30 transition-colors ${selectedIds.includes(item.incident_id) ? "bg-blue-50/50" : ""}`}>
-                    <td className="px-2 py-4 text-center"><input type="checkbox" checked={selectedIds.includes(item.incident_id)} onChange={() => toggleRow(item.incident_id)} /></td>
-                    
-                    {/* Using 'truncate' and 'whitespace-nowrap' ensures cells don't expand/shrink */}
-                    <td className="px-3 py-4 font-medium text-gray-700 truncate">{item.incident_id} {isNewTicket && <span className="animate-pulse ml-1">🚩</span>}</td>
-                    <td className="px-3 py-4 text-gray-500 truncate">{new Date(item.timestamp).toLocaleString()}</td>
-                    <td className="px-3 py-4 text-gray-700 truncate font-semibold uppercase">{item.customerName || "--"}</td>
-                    <td className="px-3 py-4 text-gray-700 truncate">{item.platform}</td>
-                    <td className="px-3 py-4 text-gray-800 font-bold truncate uppercase">{item.incidentName}</td>
-                    <td className="px-3 py-4 text-gray-500 text-xs truncate italic">{item.description}</td>
-                    
-                    <td className="px-3 py-4 text-center">
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase ${severityClass[item.severity]}`}>{item.severity}</span>
-                    </td>
-                    <td className="px-3 py-4 text-center">
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase ${statusClass[item.status] || "bg-gray-100"}`}>{item.status}</span>
-                    </td>
-                    <td className="px-3 py-4 text-gray-400 truncate text-[11px]">{item.source}</td>
-                    <td className="px-3 py-4 text-center">
-                      <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase ${actionStatusClass[item.actionStatus || 'New']}`}>{item.actionStatus || "New"}</span>
-                    </td>
-                    
-                    <td className="px-3 py-4">
-                      <div className="flex gap-2 justify-center">
-                        <button onClick={() => setViewIncident(item)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-all"><Eye size={16} /></button>
-                        <button onClick={() => setEditIncident(item)} className="p-1.5 text-green-600 hover:bg-green-100 rounded-lg transition-all"><Edit2 size={16} /></button>
-                        <button onClick={() => setEmailIncident(item)} className="p-1.5 text-purple-600 hover:bg-purple-100 rounded-lg transition-all"><Mail size={16} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                  <MultiSelectFilter label={col.label} options={getOptions(col.key)} selected={columnFilters[col.key] || []} onChange={(vals: string[]) => { setColumnFilters((prev) => { const newFilters = { ...prev, [col.key]: vals }; if (vals.length === 0) delete newFilters[col.key]; return newFilters; }); }} />
+                </th>
+              ))}
+              <th className="w-[120px] px-3 py-2 text-gray-600 border-b-2 border-gray-300 text-center uppercase text-[10px] font-black">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {currentRows.map((item) => {
+              const isNewTicket = (new Date().getTime() - new Date(item.timestamp).getTime()) < (24 * 60 * 60 * 1000);
+              return (
+                <tr key={item.incident_id} className={`hover:bg-blue-50/30 transition-colors ${selectedIds.includes(item.incident_id) ? "bg-blue-50/50" : ""}`}>
+                  <td className="px-2 py-4 text-center"><input type="checkbox" checked={selectedIds.includes(item.incident_id)} onChange={() => toggleRow(item.incident_id)} /></td>
+                  
+                  {/* FULL TEXT HOVER POP-UP (title attribute) */}
+                  <td className="px-3 py-4 font-medium text-gray-700 truncate" title={item.incident_id}>
+                    {item.incident_id} {isNewTicket && <span className="animate-pulse ml-1">🚩</span>}
+                  </td>
+                  <td className="px-3 py-4 text-gray-500 truncate" title={new Date(item.timestamp).toLocaleString()}>
+                    {new Date(item.timestamp).toLocaleString()}
+                  </td>
+                  <td className="px-3 py-4 text-gray-700 truncate font-semibold uppercase" title={item.customerName}>
+                    {item.customerName || "--"}
+                  </td>
+                  <td className="px-3 py-4 text-gray-700 truncate" title={item.platform}>
+                    {item.platform}
+                  </td>
+                  <td className="px-3 py-4 text-gray-800 font-bold truncate uppercase" title={item.incidentName}>
+                    {item.incidentName}
+                  </td>
+                  <td className="px-3 py-4 text-gray-500 text-xs truncate italic" title={item.description}>
+                    {item.description}
+                  </td>
+                  
+                  <td className="px-3 py-4 text-center">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase ${severityClass[item.severity]}`}>{item.severity}</span>
+                  </td>
+                  <td className="px-3 py-4 text-center">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase ${statusClass[item.status] || "bg-gray-100"}`}>{item.status}</span>
+                  </td>
+                  <td className="px-3 py-4 text-gray-400 truncate text-[11px]" title={item.source}>
+                    {item.source}
+                  </td>
+                  <td className="px-3 py-4 text-center">
+                    <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase ${actionStatusClass[item.actionStatus || 'New']}`}>{item.actionStatus || "New"}</span>
+                  </td>
+                  
+                  <td className="px-3 py-4">
+                    <div className="flex gap-2 justify-center">
+                      <button onClick={() => setViewIncident(item)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg"><Eye size={16} /></button>
+                      <button onClick={() => setEditIncident(item)} className="p-1.5 text-green-600 hover:bg-green-100 rounded-lg"><Edit2 size={16} /></button>
+                      <button onClick={() => setEmailIncident(item)} className="p-1.5 text-purple-600 hover:bg-purple-100 rounded-lg"><Mail size={16} /></button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       {/* 3. Pinned Pagination Area - Fixed to bottom */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-gray-50 border-x-2 border-b-2 border-gray-300 rounded-b-lg z-50">

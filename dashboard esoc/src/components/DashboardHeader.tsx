@@ -115,9 +115,19 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
       </div>
 
       <div className="flex flex-col xl:flex-row gap-6">
-        {/* LEFT: PLATFORM STATUS CARDS WITH ACTIVE CRITICAL ALERTS */}
-        <div className="w-full xl:w-[320px] flex flex-col gap-3">
-          <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest px-1">Active Platform Status</p>
+        {/* LEFT: INTERACTIVE PLATFORM STATUS CARDS */}
+        <div className="w-full xl:w-[320px] flex flex-col gap-3 group/platform">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Active Incident Status</p>
+            {/* Quick reset button for platform only */}
+            <button 
+              onClick={() => onFilterChange("platform", "")}
+              className="text-[9px] font-bold text-blue-600 hover:underline opacity-0 group-hover/platform:opacity-100 transition-opacity"
+            >
+              RESET
+            </button>
+          </div>
+
           {platforms.map((p) => {
             const platformEvents = events.filter(e => e.platform === p.name);
             
@@ -131,12 +141,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
             const hasActiveCritical = activeCriticalCount > 0;
 
             return (
-              <div 
+              <button 
                 key={p.name} 
-                className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
+                // TRiggers the filter change for the main table
+                onClick={() => onFilterChange("platform", p.name)} 
+                className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer text-left w-full hover:scale-[1.02] active:scale-95 ${
                   hasActiveCritical 
                     ? "border-red-500 bg-red-50/50 animate-pulse" 
-                    : `${p.color} border-transparent shadow-sm`
+                    : `${p.color} border-transparent shadow-sm hover:border-gray-300`
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -153,11 +165,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
                   <span className="h-4 w-[1px] bg-gray-300 mx-1" />
                   <span className="text-lg font-black text-gray-900">{platformEvents.length}</span>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
-
+        
         {/* CENTER: INTERACTIVE STACKED SEVERITY BAR CHART */}
           <div className="flex-1 bg-gray-50/50 rounded-2xl p-4 border border-dashed border-gray-200">
             <p className="text-[10px] font-black uppercase text-gray-400 mb-4 tracking-widest text-center">
@@ -193,20 +205,25 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
                   
                   {/* Clickable Bars: Triggers dual-filtering for Customer + Severity */}
                   {["Low", "Medium", "High", "Critical"].map((sev) => (
-                    <Bar 
-                      key={sev}
-                      dataKey={sev} 
-                      stackId="a" 
-                      fill={COLORS[sev]} 
-                      className="cursor-pointer hover:opacity-80 transition-opacity"
-                      radius={sev === "Critical" ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                      onClick={(data) => {
-                        // Filters the entire table by both customer name and selected severity
+                  <Bar 
+                    key={sev}
+                    dataKey={sev} 
+                    stackId="a" 
+                    fill={COLORS[sev]} 
+                    className="cursor-pointer hover:opacity-80 transition-opacity"
+                    radius={sev === "Critical" ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                    onClick={(data) => {
+                      /** * CRITICAL FIX: 
+                       * 'data.name' corresponds to the X-Axis value (Customer Name).
+                       * We must call onFilterChange twice to ensure BOTH are set. 
+                       */
+                      if (data && data.name) {
                         onFilterChange("customerName", data.name);
                         onFilterChange("severity", sev);
-                      }}
-                    />
-                  ))}
+                      }
+                    }}
+                  />
+                ))}
                 </BarChart>
               </ResponsiveContainer>
             </div>
