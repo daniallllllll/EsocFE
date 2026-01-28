@@ -290,9 +290,9 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
                   
                   <td className="px-3 py-4">
                     <div className="flex gap-2 justify-center">
-                      <button onClick={() => setViewIncident(item)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg"><Eye size={16} /></button>
-                      <button onClick={() => setEditIncident(item)} className="p-1.5 text-green-600 hover:bg-green-100 rounded-lg"><Edit2 size={16} /></button>
-                      <button onClick={() => setEmailIncident(item)} className="p-1.5 text-purple-600 hover:bg-purple-100 rounded-lg"><Mail size={16} /></button>
+                      <button onClick={() => setViewIncident(item)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-all"><Eye size={16} /></button>
+                      <button onClick={() => setEditIncident(item)} className="p-1.5 text-green-600 hover:bg-green-100 rounded-lg transition-all"><Edit2 size={16} /></button>
+                      <button onClick={() => setEmailIncident(item)} className="p-1.5 text-purple-600 hover:bg-purple-100 rounded-lg transition-all"><Mail size={16} /></button>
                     </div>
                   </td>
                 </tr>

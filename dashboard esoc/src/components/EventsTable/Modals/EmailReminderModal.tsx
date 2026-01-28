@@ -30,9 +30,8 @@ const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }: any) => 
 interface EmailProps {
   incident: any;
   onClose: () => void;
-  // Updated callback to include CC for Analyst Email
   onSend: (data: { to: string; cc: string; subject: string; message: string }) => void;
-  isBulkMode?: boolean; // Fixed TypeScript error
+  isBulkMode?: boolean; 
 }
 
 export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, onSend, isBulkMode }) => {
@@ -40,10 +39,14 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
   const [isSending, setIsSending] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // 1. Get the logged-in user from storage
+  const authUser = JSON.parse(localStorage.getItem("auth_user") || '{"email":"admin@test.com"}');
+
   // Unified State for Form Data
   const [formData, setFormData] = useState({
     to: incident?.customerName || "",
-    cc: "", // Specifically used for Analyst Email in Bulk Mode
+    // 2. Initialize CC with the logged-in user's email
+    cc: authUser.email || "admin@test.com", 
     subject: isBulkMode ? "Bulk Status Update Notification" : `Incident Alert: ${incident?.incident_id || incident?.id}`,
     message: ""
   });
@@ -76,8 +79,8 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
   };
 
   const handleSendTrigger = () => {
-    if (isBulkMode && !formData.cc) {
-      alert("Please enter the Analyst Email performing this bulk update.");
+    if (!formData.cc) {
+      alert("Please enter the Analyst Email for the audit trail.");
       return;
     }
     setShowConfirm(true);
@@ -87,9 +90,8 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
     setShowConfirm(false);
     setIsSending(true);
     
-    // Simulate network delay
     setTimeout(() => {
-      onSend(formData); // Send unified data object
+      onSend(formData); 
       setIsSending(false);
     }, 1000);
   };
@@ -136,12 +138,14 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
             />
           </div>
 
+          {/* 3. AUTO-POPULATED ANALYST FIELD */}
           <div className="flex items-center border-b py-2 bg-blue-50/30">
             <span className="text-blue-600 w-24 font-bold uppercase text-[10px] flex items-center gap-1">
               <UserCheck size={12}/> Analyst
             </span>
             <input 
-              className="flex-1 outline-none bg-transparent font-medium" 
+              type="email"
+              className="flex-1 outline-none bg-transparent font-medium text-gray-700" 
               value={formData.cc}
               onChange={(e) => setFormData({...formData, cc: e.target.value})}
               placeholder="Your email (Required for audit trail)"
