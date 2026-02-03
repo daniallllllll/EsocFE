@@ -13,6 +13,7 @@ export interface EventItem {
   assignedTo?: string;
   remarks?: string;
   timeline?: any[];
+  lastUpdated?: string;
 }
 
 export interface TimelineEvent {

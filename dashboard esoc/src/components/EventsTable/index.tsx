@@ -24,7 +24,8 @@ interface EventsTableProps {
 
 const columns: { key: keyof EventItem; label: string; width: string }[] = [
   { key: "incident_id", label: "Incident ID", width: "w-[140px]" },
-  { key: "timestamp", label: "Time", width: "w-[180px]" },
+  { key: "timestamp", label: "Detected Time", width: "w-[180px]" },
+  { key: "lastUpdated", label: "Last Updated", width: "w-[180px]" },
   { key: "customerName", label: "Customer Name", width: "w-[160px]" },
   { key: "platform", label: "Platform", width: "w-[140px]" },
   { key: "incidentName", label: "Incident Name", width: "w-[220px]" },
@@ -261,6 +262,9 @@ export const EventsTable: React.FC<EventsTableProps> = ({ events = [], cardFilte
                   </td>
                   <td className="px-3 py-4 text-gray-500 truncate" title={new Date(item.timestamp).toLocaleString()}>
                     {new Date(item.timestamp).toLocaleString()}
+                  </td>
+                  <td className="px-3 py-4 text-gray-500 truncate" title={item.lastUpdated ? new Date(item.lastUpdated).toLocaleString() : "--"}>
+                    {item.lastUpdated ? new Date(item.lastUpdated).toLocaleString() : "--"}
                   </td>
                   <td className="px-3 py-4 text-gray-700 truncate font-semibold uppercase" title={item.customerName}>
                     {item.customerName || "--"}
