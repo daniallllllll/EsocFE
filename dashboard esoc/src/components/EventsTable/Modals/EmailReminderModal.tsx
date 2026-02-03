@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; 
-import { X, Minus, Maximize2, Minimize2, ChevronDown, MoreVertical, Trash2, Paperclip, AlertTriangle, UserCheck } from "lucide-react";
+import { X, Minus, Maximize2, Minimize2, ChevronDown, MoreVertical, Trash2, Paperclip, AlertTriangle, UserCheck, Send } from "lucide-react";
 
 /* --- Reusable Confirmation Component --- */
 const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }: any) => {
@@ -30,7 +30,7 @@ const ConfirmDialog = ({ isOpen, onConfirm, onCancel, title, message }: any) => 
 interface EmailProps {
   incident: any;
   onClose: () => void;
-  onSend: (data: { to: string; cc: string; subject: string; message: string }) => void;
+  onSend: (data: { to: string; cc: string; subject: string; message: string; sentAt: string; sender: string }) => void;
   isBulkMode?: boolean; 
 }
 
@@ -38,6 +38,7 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
   const [isMaximized, setIsMaximized] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showToast, setShowToast] = useState(false); // New: Success Toast State
 
   // 1. Get the logged-in user from storage
   const authUser = JSON.parse(localStorage.getItem("auth_user") || '{"email":"admin@test.com"}');
@@ -90,9 +91,26 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
     setShowConfirm(false);
     setIsSending(true);
     
+    // Create the structured log entry for the chronology
+    const finalEmailData = {
+      ...formData,
+      sentAt: new Date().toLocaleString('en-GB', { 
+        day: '2-digit', month: '2-digit', year: 'numeric', 
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true 
+      }),
+      sender: formData.cc, 
+    };
+
+    // Simulate network delay for a professional feel
     setTimeout(() => {
-      onSend(formData); 
+      onSend(finalEmailData); 
       setIsSending(false);
+      setShowToast(true); // Trigger Success Toast
+      
+      // Delay closing to show toast
+      setTimeout(() => {
+        onClose(); 
+      }, 1500);
     }, 1000);
   };
 
@@ -100,6 +118,19 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
     <>
       <div className="fixed inset-0 bg-black/20 z-[80]" onClick={onClose} />
       
+      {/* SUCCESS TOAST NOTIFICATION */}
+      {showToast && (
+        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-3 bg-green-600 text-white px-6 py-3 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-white/20 p-1 rounded-full">
+            <UserCheck size={18} className="text-white" />
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest leading-none">Notification Sent</p>
+            <p className="text-[10px] opacity-90 mt-1">Email successfully added to Incident Chronology</p>
+          </div>
+        </div>
+      )}
+
       <div className={`fixed bg-white shadow-2xl z-[90] flex flex-col border border-gray-300 transition-all duration-300 animate-in slide-in-from-bottom-10 ${
         isMaximized 
           ? "inset-10 rounded-xl" 
@@ -138,7 +169,7 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
             />
           </div>
 
-          {/* 3. AUTO-POPULATED ANALYST FIELD */}
+          {/* AUTO-POPULATED ANALYST FIELD */}
           <div className="flex items-center border-b py-2 bg-blue-50/30">
             <span className="text-blue-600 w-24 font-bold uppercase text-[10px] flex items-center gap-1">
               <UserCheck size={12}/> Analyst
@@ -191,7 +222,10 @@ export const EmailReminderModal: React.FC<EmailProps> = ({ incident, onClose, on
                   Processing...
                 </>
               ) : (
-                isBulkMode ? "Apply to Selected" : "Send Notification"
+                <>
+                  <Send size={14} />
+                  {isBulkMode ? "Apply to Selected" : "Send Notification"}
+                </>
               )}
             </button>
             <button className="p-2 hover:bg-gray-200 rounded text-gray-600">
