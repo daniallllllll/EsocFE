@@ -190,7 +190,7 @@ export const ViewIncidentModal: React.FC<any> = ({ incident, onClose, onEdit, on
                       >
                         <div className="flex justify-between items-center mb-3">
                           <span className="text-[9px] font-black text-purple-700 uppercase bg-purple-50 px-2 py-1 rounded border border-purple-100">
-                            External Notification
+                            Reminder
                           </span>
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-gray-400 font-mono italic">{mail.sentAt}</span>

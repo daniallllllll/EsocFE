@@ -245,7 +245,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
         {/* CENTER: TOP 10 CUSTOMER BAR CHART */}
         <div className="flex-1 bg-gray-50/50 rounded-2xl p-4 border border-dashed border-gray-200">
           <div className="flex justify-between items-center mb-4">
-            <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Top 10 Customers by Volume</p>
+            <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Top 10 Customers by Incident</p>
             <button onClick={() => setShowAllCustomers(true)} className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 px-2 py-1 rounded">
               <Maximize2 size={10} /> SEE ALL
             </button>

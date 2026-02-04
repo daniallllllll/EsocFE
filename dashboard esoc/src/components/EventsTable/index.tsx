@@ -24,7 +24,7 @@ interface EventsTableProps {
 
 const columns: { key: keyof EventItem; label: string; width: string }[] = [
   { key: "incident_id", label: "Incident ID", width: "w-[140px]" },
-  { key: "timestamp", label: "Detected Time", width: "w-[180px]" },
+  { key: "timestamp", label: "Created At", width: "w-[180px]" },
   { key: "lastUpdated", label: "Last Updated", width: "w-[180px]" },
   { key: "customerName", label: "Customer Name", width: "w-[160px]" },
   { key: "platform", label: "Platform", width: "w-[140px]" },
