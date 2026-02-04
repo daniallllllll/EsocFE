@@ -134,8 +134,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
       head: [['Metric', 'Value']],
       body: [
         ['Total Incidents Ingested', events.length.toString()],
-        ['Active Critical Alerts', events.filter(e => normalizeSeverity(e.severity) === "Critical").length.toString()],
-        ['Security Status', 'Operational'],
+        ['Active Critical Alerts', events.filter(e => normalizeSeverity(e.severity) === "Critical").length.toString()]
       ],
       headStyles: { fillColor: [11, 87, 208] }
     });
