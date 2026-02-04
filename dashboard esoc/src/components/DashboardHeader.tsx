@@ -62,6 +62,25 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
   };
 
   /* ===================== DATA PROCESSING ===================== */
+  
+  // 1. Restore Donut Chart Data
+  const severityPieData = Object.entries(
+    events.reduce<Record<string, number>>((acc, e) => {
+      const key = normalizeSeverity(e.severity || "");
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {})
+  ).map(([name, value]) => ({ name, value, color: COLORS[name] || "#CBD5E1" }));
+
+  const statusPieData = Object.entries(
+    events.reduce<Record<string, number>>((acc, e) => {
+      const key = normalizeStatus(e.status || "");
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {})
+  ).map(([name, value]) => ({ name, value, color: COLORS[name] || "#CBD5E1" }));
+
+  // 2. Customer Bar Chart Data
   const processCustomerData = (data: EventItem[]) => {
     return Object.entries(
       data.reduce<Record<string, any>>((acc, e) => {
@@ -102,11 +121,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
   const generateDailyReport = () => {
     const doc = new jsPDF();
     const dateStr = new Date().toLocaleDateString('en-GB');
-
     doc.setFontSize(20);
     doc.setTextColor(11, 87, 208);
     doc.text("SOC DAILY SUMMARY REPORT", 14, 22);
-    
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Generated: ${dateStr} | Analyst: ${user.email || "admin@test.com"}`, 14, 30);
@@ -118,7 +135,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
       body: [
         ['Total Incidents Ingested', events.length.toString()],
         ['Active Critical Alerts', events.filter(e => normalizeSeverity(e.severity) === "Critical").length.toString()],
-        ['System Health Status', 'Operational'],
+        ['Security Status', 'Operational'],
       ],
       headStyles: { fillColor: [11, 87, 208] }
     });
@@ -129,7 +146,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
       head: [['Customer', 'Crit', 'High', 'Med', 'Low', 'Total']],
       body: top10Data.map(c => [c.name, c.Critical, c.High, c.Medium, c.Low, c.total]),
     });
-
     doc.save(`SOC_Daily_Report_${dateStr.replace(/\//g, '-')}.pdf`);
   };
 
@@ -156,7 +172,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
           </div>
           <button 
             onClick={() => onFilterChange("severity", "Critical")}
-            className="bg-white text-red-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase hover:bg-gray-50 transition-colors"
+            className="bg-white text-red-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase hover:bg-gray-100 transition-colors"
           >
             Investigate
           </button>
@@ -179,7 +195,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
           </button>
 
           <div className="relative">
-            <button onClick={() => setOpenMenu(!openMenu)} className="flex items-center gap-2 rounded-full border bg-gray-50 px-4 py-1.5 text-sm hover:bg-gray-100 shadow-sm transition-all">
+            <button onClick={() => setOpenMenu(!openMenu)} className="flex items-center gap-2 rounded-full border bg-gray-50 px-4 py-1.5 text-sm hover:bg-gray-100 transition-all shadow-sm transition-all">
               <User className="w-4 h-4 text-blue-600" />
               <span className="font-bold text-gray-700">{user.email || "admin@test.com"}</span>
             </button>
@@ -226,7 +242,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
           })}
         </div>
 
-        {/* CENTER: TOP 10 SUMMARIZATION CHART */}
+        {/* CENTER: TOP 10 CUSTOMER BAR CHART */}
         <div className="flex-1 bg-gray-50/50 rounded-2xl p-4 border border-dashed border-gray-200">
           <div className="flex justify-between items-center mb-4">
             <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Top 10 Customers by Volume</p>
@@ -246,6 +262,38 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ events, onFilt
                 ))}
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* RESTORED: RIGHT PIE CHARTS (MIX ANALYSIS) */}
+        <div className="w-full xl:w-[280px] flex xl:flex-col gap-6 justify-center border-l xl:pl-6 border-gray-100">
+          <div className="flex flex-col items-center">
+            <p className="text-[9px] font-black uppercase text-gray-400 mb-1 tracking-widest text-center">Global Severity</p>
+            <div className="h-[90px] w-[90px]">
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie data={severityPieData} dataKey="value" nameKey="name" innerRadius={28} outerRadius={38} paddingAngle={4} stroke="none" onClick={(data) => onFilterChange("severity", data.name)} className="cursor-pointer outline-none">
+                    {severityPieData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                    <Label value={events.length} position="center" className="text-[10px] font-black fill-gray-700" />
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="flex flex-col items-center">
+            <p className="text-[9px] font-black uppercase text-gray-400 mb-1 tracking-widest text-center">Incident Status</p>
+            <div className="h-[90px] w-[90px]">
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie data={statusPieData} dataKey="value" nameKey="name" innerRadius={28} outerRadius={38} paddingAngle={4} stroke="none" onClick={(data) => onFilterChange("status", data.name)} className="cursor-pointer outline-none">
+                    {statusPieData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                    <Label value={events.length} position="center" className="text-[10px] font-black fill-gray-700" />
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       </div>
